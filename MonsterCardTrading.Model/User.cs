@@ -8,12 +8,17 @@ namespace MonsterCardTrading.Model
 {
     public class User
     {
-        private string username;
-        private string password;
+        private string _userid;
+        private string _username;
+        private string _password;
+
+        private int coins;
+
+        public int Coins { get; }
         public User(string username, string password)
         {
-            this.username = username;
-            this.password = password;
+            this._username = username;
+            this._password = password;
         }
 
         
