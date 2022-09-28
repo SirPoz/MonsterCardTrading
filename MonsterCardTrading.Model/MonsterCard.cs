@@ -6,7 +6,10 @@ using System.Threading.Tasks;
 
 namespace MonsterCardTrading.Model
 {
-    internal class MonsterCard
+    internal class MonsterCard : Card
     {
+        public MonsterCard(string name, int damage) : base(name, damage)
+        {
+        }
     }
 }
