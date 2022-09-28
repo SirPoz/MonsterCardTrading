@@ -19,6 +19,7 @@ namespace MonsterCardTrading.BL
             DatabaseHandler dbconnection = new DatabaseHandler();
             if (dbconnection.CheckUserCredentials(username, password))
             {
+                Console.WriteLine("User credentials okay");
                 return new User(username, password);
             }
             else
