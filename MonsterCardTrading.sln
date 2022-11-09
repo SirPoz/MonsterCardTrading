@@ -5,11 +5,15 @@ VisualStudioVersion = 17.3.32901.215
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MonsterCardTrading", "MonsterCardTrading\MonsterCardTrading.csproj", "{F8391D77-1443-4272-8061-A2993380C996}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MonsterCardTrading.BL", "MonsterCardTrading.BL\MonsterCardTrading.BL.csproj", "{EC03AFD6-C953-4A25-97E2-E31EFCF9D506}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MonsterCardTrading.BL", "MonsterCardTrading.BL\MonsterCardTrading.BL.csproj", "{EC03AFD6-C953-4A25-97E2-E31EFCF9D506}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MonsterCardTrading.DAL", "MonsterCardTrading.DAL\MonsterCardTrading.DAL.csproj", "{785D3B0F-85C8-465A-A21A-95D8A8D36D4A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MonsterCardTrading.DAL", "MonsterCardTrading.DAL\MonsterCardTrading.DAL.csproj", "{785D3B0F-85C8-465A-A21A-95D8A8D36D4A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MonsterCardTrading.Model", "MonsterCardTrading.Model\MonsterCardTrading.Model.csproj", "{5A1AD70A-AA35-4EAA-A673-566E52BB8ACF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MonsterCardTrading.Model", "MonsterCardTrading.Model\MonsterCardTrading.Model.csproj", "{5A1AD70A-AA35-4EAA-A673-566E52BB8ACF}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MonsterCardTrading.HttpServer", "..\FirstHttpServer\MonsterCardTrading.HttpServer.csproj", "{B1C0BF02-CD48-494E-9433-47576EC8E3EF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MonsterCardTrading.APIHandler", "MonsterCardTrading.APIHandler\MonsterCardTrading.APIHandler.csproj", "{7D0D2F5F-09E9-4365-9739-D54021286A28}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,6 +37,14 @@ Global
 		{5A1AD70A-AA35-4EAA-A673-566E52BB8ACF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5A1AD70A-AA35-4EAA-A673-566E52BB8ACF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5A1AD70A-AA35-4EAA-A673-566E52BB8ACF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B1C0BF02-CD48-494E-9433-47576EC8E3EF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B1C0BF02-CD48-494E-9433-47576EC8E3EF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B1C0BF02-CD48-494E-9433-47576EC8E3EF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B1C0BF02-CD48-494E-9433-47576EC8E3EF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7D0D2F5F-09E9-4365-9739-D54021286A28}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7D0D2F5F-09E9-4365-9739-D54021286A28}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7D0D2F5F-09E9-4365-9739-D54021286A28}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7D0D2F5F-09E9-4365-9739-D54021286A28}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
