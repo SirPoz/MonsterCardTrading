@@ -7,7 +7,7 @@ using Microsoft.VisualBasic.FileIO;
 
 namespace MonsterCardTrading.APIHandler
 {
-    [AttributeUsage(HTTPMethod | APIPath)]
+    /*[AttributeUsage(HTTPMethod | APIPath)]
     internal class ApiBranch : Attribute
     {
         private const object APIPath = VALUE;
@@ -15,5 +15,5 @@ namespace MonsterCardTrading.APIHandler
             POST, PUT, GET, DELETE
         };
 };
-    }
+    }*/
 }
