@@ -8,18 +8,15 @@ namespace MonsterCardTrading.Model
 {
     public class Card
     {
-        private string _name;
-        private int _damage;
-
-        public int Damage { get; }
-        public string Name { get;  }
-
+        private string Id;
+        private string Name;
+        private float Damage;
 
 
         public Card(string name, int damage)
         {
-            this._name = name;
-            this._damage = damage;
+            this.Name = name;
+            this.Damage = damage;
         }
     }
 }

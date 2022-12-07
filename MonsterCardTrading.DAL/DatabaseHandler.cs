@@ -10,6 +10,7 @@ namespace MonsterCardTrading.DAL
 {
     public class DatabaseHandler
     {
+        PostgresRepository pr = new PostgresRepository();
         public DatabaseHandler()
         {
 
@@ -20,9 +21,16 @@ namespace MonsterCardTrading.DAL
             return false;
         }
 
+        public void UpdateUser(User newUser)
+        {
+
+        }
+
         public bool CheckUserCredentials(string username, string password)
         {
             return false;
         }
+
+
     }
 }

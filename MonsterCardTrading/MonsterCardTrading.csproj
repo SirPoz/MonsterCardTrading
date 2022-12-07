@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\FirstHttpServer\MonsterCardTrading.HttpServer.csproj" />
+    <ProjectReference Include="..\MonsterCardTrading.APIHandler\MonsterCardTrading.APIHandler.csproj" />
   </ItemGroup>
 
 </Project>
