@@ -26,7 +26,7 @@ namespace MonsterCardTrading.APIHandler
         {
             try
             {
-                JsonSerializer.Deserialize<User>(request.Content);
+                var User = JsonSerializer.Deserialize<User>(request.Content);
 
                 response.ResponseCode = 200;
                 response.ResponseContent = "application/json";

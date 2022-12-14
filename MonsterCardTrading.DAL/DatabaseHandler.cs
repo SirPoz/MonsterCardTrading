@@ -10,21 +10,47 @@ namespace MonsterCardTrading.DAL
 {
     public class DatabaseHandler
     {
-        PostgresRepository pr = new PostgresRepository();
+        private PostgresRepository pr; 
         public DatabaseHandler()
         {
-
+            pr = new PostgresRepository();
+            setupDatabase();
         }
 
-        public bool CreateUser(User newUser)
-        {
-            return false;
-        }
-
-        public void UpdateUser(User newUser)
+        public void AddUser(User user)
         {
 
         }
+
+        public void UpdateUser(User user)
+        {
+
+        }
+
+        public void DeleteUser(User user)
+        {
+
+        }
+
+        public void AddCard(Card card)
+        {
+
+        }
+        public void UpdateCard(Card card)
+        {
+
+        }
+        public void DeleteCard(Card card)
+        {
+
+        }
+
+        private void setupDatabase()
+        {
+
+        }
+
+
 
         public bool CheckUserCredentials(string username, string password)
         {
