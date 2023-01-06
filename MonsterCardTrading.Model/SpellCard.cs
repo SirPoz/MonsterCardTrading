@@ -6,11 +6,10 @@ using System.Threading.Tasks;
 
 namespace MonsterCardTrading.Model
 {
-    internal class SpellCard : Card
+    public class SpellCard : Card
     {
-        public SpellCard(string name, int damage) : base(name, damage)
+        public SpellCard(string id, string name, int damage, int type, int element) : base(id, name, damage, type, element)
         {
-
         }
     }
 }

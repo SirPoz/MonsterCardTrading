@@ -8,15 +8,36 @@ namespace MonsterCardTrading.Model
 {
     public class Card
     {
-        private string Id;
-        private string Name;
-        private float Damage;
+        public string ?Id { set; get; }
+        public string ?Name { set; get; }
+        public float ?Damage { set; get; }
 
+        public int ?packageid { set; get; }
+        public Element ?Element { set; get; }
 
-        public Card(string name, int damage)
-        {
-            this.Name = name;
-            this.Damage = damage;
-        }
+        public Type ?Type { set; get; }
+
     }
+
+    public enum Element
+    {
+        Fire,
+        Water,
+        Normal
+
+    };
+
+    public enum Type
+    {
+        WaterSpell,
+        FireSpell,
+        NormalSpell,
+        Goblin,
+        Dragon,
+        Wizzard,
+        Ork,
+        Knight,
+        Kraken,
+        FireElf
+    };
 }

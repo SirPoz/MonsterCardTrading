@@ -15,21 +15,55 @@ namespace MonsterCardTrading.DAL
 {
     internal class PostgresRepository
     {
-        private IDbConnection con;
+        NpgsqlConnection con;
 
         public PostgresRepository()
         {
-            con = new NpgsqlConnection("Host=localhost;Username=swe1user;Password=swe1pw;Database=simpledatastore");
+            con = new NpgsqlConnection("Host=localhost;Username=swe1user;Password=swe1pw;Database=swe1user");
+            
         }
 
-        public void readDB(string command)
+        public NpgsqlDataReader readDB(string command, List<NpgsqlParameter> parameters)
         {
+            con.Open();
+            var readCommand = new NpgsqlCommand(command, con);
 
+            if (parameters != null)
+            {
+                foreach (var parameter in parameters)
+                {
+                    readCommand.Parameters.Add(parameter);
+                }
+            }
+
+            NpgsqlDataReader result = readCommand.ExecuteReader();
+
+            
+
+            con.Close();
+
+            return result;
         }
 
-        public void writeDB(string command)
+        public void writeDB(string command, List<NpgsqlParameter> parameters)
         {
+            con.Open();
+            var writeCommand = new NpgsqlCommand(command, con);
+            
+            if(parameters != null)
+            {
+                foreach (var parameter in parameters)
+                {
+                    writeCommand.Parameters.Add(parameter);
+                }
+            }
+           
 
+            writeCommand.ExecuteNonQuery();
+
+            con.Close();
+
+           
         }
 
 

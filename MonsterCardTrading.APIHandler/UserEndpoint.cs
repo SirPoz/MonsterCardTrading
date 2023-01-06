@@ -8,6 +8,7 @@ using FirstHttpServer;
 using MonsterCardTrading.HttpServer;
 using MonsterCardTrading.Model;
 
+
 namespace MonsterCardTrading.APIHandler
 {
     public class UserEndpoint : IHttpEndpoint
@@ -27,12 +28,15 @@ namespace MonsterCardTrading.APIHandler
 
         private void CreateUser(HttpRequest request, HttpResponse response)
         {
+            
             try
             {
                 var User = JsonSerializer.Deserialize<User>(request.Content);
 
+                Console.WriteLine(request.Content);
                 response.ResponseCode = 200;
                 response.ResponseContent = "application/json";
+               
             }
             catch (Exception)
             {
@@ -40,7 +44,10 @@ namespace MonsterCardTrading.APIHandler
                 response.ResponseContent = "application/json";
                 response.ResponseText = "failed to deserialize request";
             }
-            
+
+
+
+         
             //do something
         }
 

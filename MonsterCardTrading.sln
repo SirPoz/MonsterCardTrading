@@ -15,7 +15,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MonsterCardTrading.HttpServ
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MonsterCardTrading.APIHandler", "MonsterCardTrading.APIHandler\MonsterCardTrading.APIHandler.csproj", "{7D0D2F5F-09E9-4365-9739-D54021286A28}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MonsterCardTrading.Test", "MonsterCardTrading.HttpServer.Test\MonsterCardTrading.Test.csproj", "{CFE4EF53-32DD-4959-9C0F-9D4FEC057D32}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MonsterCardTrading.Test", "MonsterCardTrading.HttpServer.Test\MonsterCardTrading.Test.csproj", "{CFE4EF53-32DD-4959-9C0F-9D4FEC057D32}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

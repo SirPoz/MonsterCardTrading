@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace MonsterCardTrading.Model
 {
-    internal class MonsterCard : Card
+    public class MonsterCard : Card
     {
-        public MonsterCard(string name, int damage) : base(name, damage)
+        public MonsterCard(string id, string name, int damage, int type, int element) : base(id, name, damage, type, element)
         {
         }
     }
