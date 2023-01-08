@@ -10,7 +10,6 @@
   <ItemGroup>
     <ProjectReference Include="..\MonsterCardTrading.DAL\MonsterCardTrading.DAL.csproj" />
     <ProjectReference Include="..\MonsterCardTrading.Model\MonsterCardTrading.Model.csproj" />
-    <ProjectReference Include="..\MonsterCardTrading\MonsterCardTrading.csproj" />
   </ItemGroup>
 
 </Project>

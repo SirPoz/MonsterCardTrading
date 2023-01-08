@@ -13,20 +13,68 @@ using NpgsqlTypes;
 
 namespace MonsterCardTrading.DAL
 {
-    internal class PostgresRepository
+    public static class PostgresRepository
     {
-        NpgsqlConnection con;
-
-        public PostgresRepository()
+        private static Dictionary<int, IDbConnection> Connections = new Dictionary<int, IDbConnection>();
+        private static Dictionary<int, bool> OpenConnections = new Dictionary<int, bool>();
+        public static void setup(int connections)
         {
-            con = new NpgsqlConnection("Host=localhost;Username=swe1user;Password=swe1pw;Database=swe1user");
+            IDbConnection connection;
+            for (int i = 0; i < connections; i++)
+            {
+                connection = new NpgsqlConnection("Host=localhost;Username=swe1user;Password=swe1pw;Database=swe1user");
+                connection.Open();
+                Connections.Add(i, connection);
+                OpenConnections.Add(i, false);
+            }
+        }
+
+        public static Tuple<int, IDbConnection> getConnection()
+        {
+            Console.WriteLine("Openconnections: " + getOpenConnections());
+            for(int i = 0; i < Connections.Count; i++)
+            {
+                if(!OpenConnections[i])
+                {
+                    OpenConnections[i] = true;
+                    return new Tuple<int, IDbConnection>(i,Connections[i]);
+                }
+            }
+            Connections.Add(Connections.Count+1, new NpgsqlConnection("Host=localhost;Username=swe1user;Password=swe1pw;Database=swe1user"));
+            OpenConnections.Add(Connections.Count + 1, true);
+            return new Tuple<int, IDbConnection>(Connections.Last().Key, Connections.Last().Value);
+        }
+
+        public static void releaseConnections(int i)
+        {
+           
+            if (Connections[i].State != ConnectionState.Open)
+            {
+                Connections[i].Open();
+               
+            }   
+            OpenConnections[i] = false;
             
         }
 
-        public NpgsqlDataReader readDB(string command, List<NpgsqlParameter> parameters)
+        private static int getOpenConnections()
+        {
+            int count = 0;
+            foreach(var con in OpenConnections)
+            {
+                if(!con.Value)
+                {
+                    count++;
+                }
+            }
+            return count;
+        }
+
+        /*public NpgsqlDataReader readDB(string command, List<NpgsqlParameter> parameters)
         {
             con.Open();
-            var readCommand = new NpgsqlCommand(command, con);
+            IDbCommand readCommand = con.CreateCommand();
+            readCommand.CommandText = command;
 
             if (parameters != null)
             {
@@ -36,7 +84,7 @@ namespace MonsterCardTrading.DAL
                 }
             }
 
-            NpgsqlDataReader result = readCommand.ExecuteReader();
+            NpgsqlDataReader result = (NpgsqlDataReader)readCommand.ExecuteReader();
 
             
 
@@ -45,10 +93,12 @@ namespace MonsterCardTrading.DAL
             return result;
         }
 
-        public void writeDB(string command, List<NpgsqlParameter> parameters)
+        public int writeDB(string command, List<NpgsqlParameter> parameters)
         {
             con.Open();
-            var writeCommand = new NpgsqlCommand(command, con);
+            IDbCommand writeCommand = con.CreateCommand();
+            writeCommand.CommandText = command;
+            
             
             if(parameters != null)
             {
@@ -57,14 +107,18 @@ namespace MonsterCardTrading.DAL
                     writeCommand.Parameters.Add(parameter);
                 }
             }
-           
 
-            writeCommand.ExecuteNonQuery();
-
+            Console.WriteLine(command);
+            int result;
+            result = writeCommand.ExecuteNonQuery();
+            
+            
             con.Close();
 
+            Console.WriteLine("Database done");
+            return result;
            
-        }
+        }*/
 
 
         

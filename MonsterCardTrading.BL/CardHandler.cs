@@ -1,4 +1,5 @@
-﻿using MonsterCardTrading.Model;
+﻿using MonsterCardTrading.DAL;
+using MonsterCardTrading.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,27 +10,56 @@ namespace MonsterCardTrading.BL
 {
     public class CardHandler
     {
-        public void createPackage(List<Card> cards)
+
+        private DatabaseHandler db;
+
+        public CardHandler()
+        {
+            db = new DatabaseHandler();
+        }
+
+        public void createPackage(User user, Stack stack)
         {
             //check token?
+            if(user.Username != "admin")
+            {
+                throw new Exception("Invalid user to create Package");
+            }
 
-            //check cards
+            //create package id
+
+            int packageid = db.getMaxPackageId() + 1;
+
+
+            //check
+           
+            for(int i = 0; i < stack.Cards.Count; i++)
+            {
+                stack.Cards[i] = initCardFromPackage(stack.Cards[i], packageid);
+            }
+            
+
 
             //add cards to cards and stacks
+            
+             db.AddPackage(stack);
+            
         }
 
         public Card getCard(string id)
         {
-
+            return null;
         }
 
-        public void aquirePackage(User user)
+        public List<Card> aquirePackage(User user)
         {
-            //check money of User
+           //check money
 
-            //check available packages
+           //check available packages
 
-            //add cards to users stack
+           //save new owner in stacks
+
+           //return packages
 
         }
 
@@ -50,6 +80,65 @@ namespace MonsterCardTrading.BL
             //check if cards belong to user
 
             //save deck in stacks
+        }
+
+        private Card initCardFromPackage(Card card, int packageid)
+        {
+            card.packageid = packageid;
+            
+            string name = card.Name;
+
+            int count = 0;
+            for (int i = 0; i < name.Length; i++)
+            {
+                if (char.IsUpper(name[i])) count++;
+            }
+            if(count == 1)
+            {
+                card.Element = Element.Normal;
+                
+                if(MonsterCardTrading.Model.Species.TryParse(name, out Species species))
+                {
+                    card.Type = species;
+                }
+                else
+                {
+                    throw new Exception("Could not define species: " + name);
+                }
+            }
+            else
+            {
+                string element = "";
+                string species = "";
+                for (int i = 0; i < name.Length; i++)
+                {
+                    if (char.IsUpper(name[i]))
+                    {
+                        count--;
+                        if (count == 0)
+                        {
+                            element = name.Substring(0, i);
+                            species = name.Substring(i);
+                            //exception because Regular = Normal
+                            if(element == "Regular") { element = "Normal"; }
+                        }
+                    }
+                   
+                }
+
+                if (MonsterCardTrading.Model.Species.TryParse(species, out Species parseSpecies) && MonsterCardTrading.Model.Element.TryParse(element, out Element parseElement))
+                {
+                    card.Element = parseElement;
+                    card.Type = parseSpecies;
+                }
+                else
+                {
+                    throw new Exception("Could not parse: " + species + " " + element);
+                }
+
+            }
+            return card;
+
         }
     }
 }

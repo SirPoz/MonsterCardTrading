@@ -5,6 +5,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using FirstHttpServer;
+using MonsterCardTrading.BL;
 using MonsterCardTrading.HttpServer;
 using MonsterCardTrading.Model;
 
@@ -31,20 +32,47 @@ namespace MonsterCardTrading.APIHandler
             
             try
             {
-                var User = JsonSerializer.Deserialize<User>(request.Content);
+                var user = JsonSerializer.Deserialize<User>(request.Content);
 
-                Console.WriteLine(request.Content);
-                response.ResponseCode = 200;
-                response.ResponseContent = "application/json";
-               
+
+                Console.WriteLine(user.Username);
+
+                if (user != null)
+                {
+                    UserHandler userHandler = new UserHandler();
+                    userHandler.createUser(user.Username, user.Password);
+                    
+                    response.ResponseCode = 201;
+                    response.ResponseContent = "application/json";
+                    string description = "User successfully created";
+                    response.ResponseContent += "\n" + JsonSerializer.Serialize(description);
+                    response.ResponseText = "OK";
+                    
+                }
+                else
+                {
+
+                    response.ResponseCode = 509;
+                    response.ResponseContent = "application/json";
+                    string description = "Failed to write to database";
+                    response.ResponseContent += "\n" + JsonSerializer.Serialize(description);
+                    response.ResponseText = "FAILED";
+                }
+                
+
             }
-            catch (Exception)
+            catch (Exception e)
             {
-                response.ResponseCode = 400;
+                Console.WriteLine(e.Message);
+                response.ResponseCode = 509;
                 response.ResponseContent = "application/json";
-                response.ResponseText = "failed to deserialize request";
+                string description = e.Message;
+                response.ResponseContent += "\n" + JsonSerializer.Serialize(description);
+                response.ResponseText = "FAILED";
             }
 
+            
+            
 
 
          

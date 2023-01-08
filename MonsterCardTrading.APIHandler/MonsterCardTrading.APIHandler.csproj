@@ -8,7 +8,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\FirstHttpServer\MonsterCardTrading.HttpServer.csproj" />
-    <ProjectReference Include="..\MonsterCardTrading.DAL\MonsterCardTrading.DAL.csproj" />
+    <ProjectReference Include="..\MonsterCardTrading.BL\MonsterCardTrading.BL.csproj" />
   </ItemGroup>
 
 </Project>

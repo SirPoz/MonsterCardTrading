@@ -8,8 +8,6 @@ namespace MonsterCardTrading.Model
 {
     public class MonsterCard : Card
     {
-        public MonsterCard(string id, string name, int damage, int type, int element) : base(id, name, damage, type, element)
-        {
-        }
+        
     }
 }

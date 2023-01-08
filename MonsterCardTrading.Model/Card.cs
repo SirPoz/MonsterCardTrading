@@ -15,7 +15,7 @@ namespace MonsterCardTrading.Model
         public int ?packageid { set; get; }
         public Element ?Element { set; get; }
 
-        public Type ?Type { set; get; }
+        public Species? Type { set; get; }
 
     }
 
@@ -27,17 +27,15 @@ namespace MonsterCardTrading.Model
 
     };
 
-    public enum Type
+    public enum Species
     {
-        WaterSpell,
-        FireSpell,
-        NormalSpell,
+        Spell,
         Goblin,
         Dragon,
         Wizzard,
         Ork,
         Knight,
         Kraken,
-        FireElf
+        Elf
     };
 }
