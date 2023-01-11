@@ -23,7 +23,7 @@ namespace MonsterCardTrading.BL
             //check token?
             if(user.Username != "admin")
             {
-                throw new Exception("Invalid user to create Package");
+                throw new ResponseException("Provided user is not \"admin\"", 403);
             }
 
             //create package id
@@ -46,20 +46,34 @@ namespace MonsterCardTrading.BL
             
         }
 
-        public Card getCard(string id)
-        {
-            return null;
-        }
+       
 
         public List<Card> aquirePackage(User user)
         {
-           //check money
+            
+            
 
-           //check available packages
+            
+            List<Card> cards = db.DrawPackage(user);
+            
 
-           //save new owner in stacks
+            //return packages
+            return cards;
 
-           //return packages
+        }
+
+        public Card getCard(string id)
+        {
+            try
+            {
+                Card card = db.GetCard(id);
+                return card;
+            }
+            catch
+            {
+                return null;
+            }
+           
 
         }
 
@@ -84,6 +98,13 @@ namespace MonsterCardTrading.BL
 
         private Card initCardFromPackage(Card card, int packageid)
         {
+            if(getCard(card.Id) != null)
+            {
+                throw new ResponseException("At least one card in the packages already exists", 409);
+            }
+
+
+
             card.packageid = packageid;
             
             string name = card.Name;

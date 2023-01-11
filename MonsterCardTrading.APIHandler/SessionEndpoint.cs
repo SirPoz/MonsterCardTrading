@@ -33,20 +33,11 @@ namespace MonsterCardTrading.APIHandler
                 {
                     UserHandler userHandler = new UserHandler();
                     string token = userHandler.loginUser(user.Username, user.Password);
-                    
-                    response.ResponseCode = 201;
-                    response.ResponseContent = "application/json";
-                    string description = "User login successful \n " + token;
-                    response.ResponseContent += "\n" + JsonSerializer.Serialize(description);
-                    response.ResponseText = "OK";
+                    response.setResponse(200, "OK", "{\"message\":\"User login successful\",\"token\":\"" + token + "\"}");
                 }
                 else
                 {
-                    response.ResponseCode = 400;
-                    response.ResponseContent = "application/json";
-                    string description = "Could not deserialize request";
-                    response.ResponseContent += "\n" + JsonSerializer.Serialize(description);
-                    response.ResponseText = "FAILED";
+                    throw new ResponseException("Could not deserialize request", 400);
                 }
 
 
@@ -54,11 +45,7 @@ namespace MonsterCardTrading.APIHandler
             catch (Exception e)
             {
                 Console.WriteLine(e.Message);
-                response.ResponseCode = 400;
-                response.ResponseContent = "application/json";
-                string description = e.Message;
-                response.ResponseContent += "\n" + JsonSerializer.Serialize(description);
-                response.ResponseText = "failed to deserialize request";
+                response.setResponse(401, "FAILED", "{\"message\":\""+ e.Message + "\"}");
             }
         }
     }

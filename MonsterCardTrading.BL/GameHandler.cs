@@ -1,4 +1,5 @@
 ﻿using MonsterCardTrading.DAL;
+using MonsterCardTrading.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,7 +19,15 @@ namespace MonsterCardTrading.BL
 
         public void resetDatabase()
         {
-            db.resetDatabase();
+            try
+            {
+                db.resetDatabase();
+            }
+            catch(Exception e)
+            {
+                throw new ResponseException(e.Message, 500);
+            }
+            
         }
     }
 }

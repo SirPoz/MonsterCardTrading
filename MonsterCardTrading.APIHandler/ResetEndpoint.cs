@@ -1,11 +1,13 @@
 ﻿using FirstHttpServer;
 using MonsterCardTrading.BL;
 using MonsterCardTrading.HttpServer;
+using MonsterCardTrading.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace MonsterCardTrading.APIHandler
@@ -17,13 +19,16 @@ namespace MonsterCardTrading.APIHandler
             switch (request.Method)
             {
                 case "POST":
-                    GameHandler gameHandler = new GameHandler();
-                    gameHandler.resetDatabase();
-                    response.ResponseCode = 201;
-                    response.ResponseContent = "application/json";
-                    string description = "Database reset";
-                    response.ResponseContent += "\n" + JsonSerializer.Serialize(description);
-                    response.ResponseText = "OK";
+                    try
+                    {
+                        GameHandler gameHandler = new GameHandler();
+                        gameHandler.resetDatabase();
+                        response.setResponse(200, "OK", "{\"message\":\"Database reset\"}");
+                    }
+                    catch (ResponseException e)
+                    {
+                        response.setResponse(e.ErrorCode, "FAILED", "{\"message\":\""+e.Message+"\"}");
+                    }
                     break;
             }
         }

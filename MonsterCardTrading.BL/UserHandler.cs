@@ -11,17 +11,19 @@ namespace MonsterCardTrading.BL
     public class UserHandler
     {
         private DatabaseHandler db;
+        private SessionHandler session;
 
         public UserHandler()
         {
-            db = new DatabaseHandler();    
+            db = new DatabaseHandler();
+            session = new SessionHandler();
         }
 
         public void createUser(string username, string password)
         {
             if(db.CheckUsernameExists(username))
             {
-                throw new Exception("User with same username already registered");
+                throw new ResponseException("User with same username already registered", 409);
             }
             
             User user = new User();
@@ -40,7 +42,7 @@ namespace MonsterCardTrading.BL
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.Message);
+                throw new ResponseException(e.Message, 500);
                
             }
            
@@ -50,11 +52,18 @@ namespace MonsterCardTrading.BL
         {
             if(db.CheckUserCredentials(username, password))
             {
-                User user = db.GetUser(username);
-                
-                return SessionHandler.addSession(user);
+                try
+                {
+                    User user = db.GetUser(username);
+                    return session.addSession(user);
+                }
+                catch(Exception e)
+                {
+                    throw new ResponseException(e.Message,500);
+                }
+                                
             }
-            throw new Exception(" Invalid username/password provided");
+            throw new ResponseException("Invalid username/password provided",401);
 
             
         }
@@ -62,7 +71,7 @@ namespace MonsterCardTrading.BL
         public User userFromToken(string token)
         {
             string[] header = token.Split(' ');
-            return SessionHandler.getSession(header[2]);
+            return session.getSession(header[2]);
 
         }
 

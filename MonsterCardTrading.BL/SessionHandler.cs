@@ -1,4 +1,5 @@
-﻿using MonsterCardTrading.Model;
+﻿using MonsterCardTrading.DAL;
+using MonsterCardTrading.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,21 +8,25 @@ using System.Threading.Tasks;
 
 namespace MonsterCardTrading.BL
 {
-    public static class SessionHandler
+    public class SessionHandler
     {
-        private static Dictionary<string, User> sessions = new Dictionary<string, User>();
-
-        public static string addSession(User user)
+        private DatabaseHandler db;
+        public SessionHandler()
         {
+            db = new DatabaseHandler();
+        }
+        public string addSession(User user)
+        {
+
             string token = createUserToken(user.Username);
-            sessions.Add(token, user);
+            db.AddToken(user, token);
             return token;
         }
 
-        public static User getSession(string token)
+        public User getSession(string token)
         {
-            
-            sessions.TryGetValue(token, out User user);
+
+            User user = db.GetUserFromToken(token);
             if(user == null)
             {
                 throw new Exception("Unkown Token: " + token);
@@ -29,7 +34,7 @@ namespace MonsterCardTrading.BL
             return user;
         }
 
-        private static string createUserToken(string username)
+        private string createUserToken(string username)
         {
             //switch only for the curl script
             switch (username)

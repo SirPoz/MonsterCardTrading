@@ -32,7 +32,7 @@ namespace MonsterCardTrading.APIHandler
 
                 if (stack == null)
                 {
-                    throw new Exception("Could not deserialize request");
+                    throw new ResponseException("Could not deserialize request",400);
                 }
                 CardHandler cardHandler = new CardHandler();
                 UserHandler userHandler = new UserHandler();
@@ -42,30 +42,21 @@ namespace MonsterCardTrading.APIHandler
                     Stack package = new Stack();
                     package.Cards = stack;
                     cardHandler.createPackage(userHandler.userFromToken(token), package);
-                    response.ResponseCode = 201;
-                    response.ResponseContent = "application/json";
-                    string description = "Package and cards successfully created";
-                    response.ResponseContent += "\n" + JsonSerializer.Serialize(description);
-                    response.ResponseText = "OK";
+                    response.setResponse(201, "OK", "{\"message\":\"Package and cards successfully created\"}");
                 }
                 else
                 {
-                    throw new Exception("Unautherized access");
+                    throw new ResponseException("UnauthorizedError",401);
                 }
                 
                 
                 
             }
-            catch (Exception e)
+            catch (ResponseException e)
             {
                 Console.WriteLine(e.Message);
-                response.ResponseCode = 400;
-                response.ResponseContent = "application/json";
-                string description = e.Message;
-                response.ResponseContent += "\n" + JsonSerializer.Serialize(description);
-                response.ResponseText = "failed to deserialize request";
+                response.setResponse(e.ErrorCode, "FAILED", "{\"message\":\""+e.Message+"\"}");
             }
-
 
         }
     }

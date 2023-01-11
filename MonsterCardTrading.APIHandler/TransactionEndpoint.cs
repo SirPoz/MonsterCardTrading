@@ -35,28 +35,20 @@ namespace MonsterCardTrading.APIHandler
                 {
                     
                     List<Card> cards = cardHandler.aquirePackage(userHandler.userFromToken(token));
-                    response.ResponseCode = 201;
-                    response.ResponseContent = "application/json";
-                    
-                    response.ResponseContent += "\n" + JsonSerializer.Serialize(cards);
-                    response.ResponseText = "OK";
+                    response.setResponse(200, "OK", "{\"message\":\"A package has been successfully bought\",\"content\": \""+ JsonSerializer.Serialize(cards) + "\"}");
                 }
                 else
                 {
-                    throw new Exception("Unautherized access");
+                    throw new ResponseException("UnauthorizedError", 401);
                 }
 
 
 
             }
-            catch (Exception e)
+            catch (ResponseException e)
             {
                 Console.WriteLine(e.Message);
-                response.ResponseCode = 400;
-                response.ResponseContent = "application/json";
-                string description = e.Message;
-                response.ResponseContent += "\n" + JsonSerializer.Serialize(description);
-                response.ResponseText = "FAILED";
+                response.setResponse(401, "FAILED", "{\"message\":\"" + e.Message + "\"}");
             }
         }
     }

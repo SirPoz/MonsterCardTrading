@@ -41,34 +41,19 @@ namespace MonsterCardTrading.APIHandler
                 {
                     UserHandler userHandler = new UserHandler();
                     userHandler.createUser(user.Username, user.Password);
-                    
-                    response.ResponseCode = 201;
-                    response.ResponseContent = "application/json";
-                    string description = "User successfully created";
-                    response.ResponseContent += "\n" + JsonSerializer.Serialize(description);
-                    response.ResponseText = "OK";
-                    
+                    response.setResponse(201,"OK", "{\"message\":\"User successfully created\"}");                    
                 }
                 else
                 {
-
-                    response.ResponseCode = 509;
-                    response.ResponseContent = "application/json";
-                    string description = "Failed to write to database";
-                    response.ResponseContent += "\n" + JsonSerializer.Serialize(description);
-                    response.ResponseText = "FAILED";
+                    throw new ResponseException("Could not deserialize request", 400); 
                 }
                 
 
             }
-            catch (Exception e)
+            catch (ResponseException e)
             {
-                Console.WriteLine(e.Message);
-                response.ResponseCode = 509;
-                response.ResponseContent = "application/json";
-                string description = e.Message;
-                response.ResponseContent += "\n" + JsonSerializer.Serialize(description);
-                response.ResponseText = "FAILED";
+                
+                response.setResponse(e.ErrorCode, "Failed", "{\"message\":\""+e.Message+"\"}");
             }
 
             

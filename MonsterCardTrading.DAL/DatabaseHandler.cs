@@ -142,6 +142,106 @@ namespace MonsterCardTrading.DAL
             throw new Exception("User not found");
         }
 
+        public void AddToken(User user, string token)
+        {
+            Tuple<int, IDbConnection> pr = PostgresRepository.getConnection();
+
+            int conID = pr.Item1;
+            IDbConnection con = pr.Item2;
+            IDbCommand command = con.CreateCommand();
+            command.CommandText = @"Update users SET token = @token WHERE username = @username;";
+
+            NpgsqlCommand? c = command as NpgsqlCommand;
+
+
+            c.Parameters.Add("token", NpgsqlDbType.Varchar, 255);
+            c.Parameters["token"].Value = token;
+
+            c.Parameters.Add("username", NpgsqlDbType.Varchar, 255);
+            c.Parameters["username"].Value = user.Username;
+
+            int result = command.ExecuteNonQuery();
+
+            PostgresRepository.releaseConnections(conID);
+
+            if (result != 1)
+            { 
+                throw new Exception("session could not be established");
+            }
+
+        
+           
+        }
+
+        public User GetUserFromToken(string token)
+        {
+            Tuple<int, IDbConnection> pr = PostgresRepository.getConnection();
+
+            int conID = pr.Item1;
+            IDbConnection con = pr.Item2;
+            IDbCommand command = con.CreateCommand();
+            command.CommandText = @"SELECT id, username, profile_text, elo, coins FROM users WHERE token = @token;";
+
+            NpgsqlCommand? c = command as NpgsqlCommand;
+
+            c.Parameters.Add("token", NpgsqlDbType.Varchar, 255);
+            c.Parameters["token"].Value = token;
+
+            IDataReader result = command.ExecuteReader();
+
+
+            if (result.Read())
+            {
+
+                User user = new User();
+
+                user.Id = result.GetString(0);
+                user.Username = result.GetString(1);
+                user.Profile = result.GetString(2);
+                user.ELO = result.GetInt32(3);
+                user.Coins = result.GetInt32(4);
+
+                result.Close();
+                PostgresRepository.releaseConnections(conID);
+                return user;
+            }
+
+            result.Close();
+            PostgresRepository.releaseConnections(conID);
+            throw new ResponseException("Access token is missing or invalid",444);
+        }
+
+        public int GetMoneyFromUser(User user)
+        {
+            Tuple<int, IDbConnection> pr = PostgresRepository.getConnection();
+
+            int conID = pr.Item1;
+            IDbConnection con = pr.Item2;
+            IDbCommand command = con.CreateCommand();
+            command.CommandText = @"SELECT coins FROM users WHERE username = @username;";
+
+
+            NpgsqlCommand? c = command as NpgsqlCommand;
+
+            c.Parameters.Add("username", NpgsqlDbType.Varchar, 255);
+            c.Parameters["username"].Value = user.Username;
+
+            IDataReader result = command.ExecuteReader();
+
+
+            if (result.Read())
+            {
+                    int coins = result.GetInt32(0);
+                    result.Close();
+                    PostgresRepository.releaseConnections(conID);
+                    return coins;
+            }
+
+            result.Close();
+            PostgresRepository.releaseConnections(conID);
+            throw new Exception("User not found");
+        }
+
         public bool CheckUserCredentials(string username, string password)
         {
             Tuple<int, IDbConnection> pr = PostgresRepository.getConnection();
@@ -288,7 +388,7 @@ namespace MonsterCardTrading.DAL
                 trans.Rollback();
                 Console.WriteLine(e.Message);
                 PostgresRepository.releaseConnections(conID);
-                throw new Exception("Package could not be generated");
+                throw new ResponseException("Package could not be generated",400);
             }
 
             trans.Commit();
@@ -328,6 +428,199 @@ namespace MonsterCardTrading.DAL
 
 
         }
+
+        public int getAvailablePackage()
+        {
+            Tuple<int, IDbConnection> pr = PostgresRepository.getConnection();
+
+            int conID = pr.Item1;
+            IDbConnection con = pr.Item2;
+
+
+            //get unaquired package
+            IDbCommand command = con.CreateCommand();
+            command.CommandText = "SELECT cards.packageid FROM cards INNER JOIN stacks ON cards.id = stacks.card_id WHERE stacks.user_id IS NULL;";
+
+            var result = command.ExecuteReader();
+
+            int packageid = 0;
+            if (result.Read())
+            {
+                if (!result.IsDBNull(0))
+                {
+                    packageid = result.GetInt32(0);
+                }
+                else
+                {
+                    result.Close();
+                    PostgresRepository.releaseConnections(conID);
+                    throw new ResponseException("No card package available for buying",404);
+                }
+
+            }
+            else
+            {
+                result.Close();
+                PostgresRepository.releaseConnections(conID);
+                throw new ResponseException("No card package available for buying",404);
+            }
+
+            result.Close();
+            PostgresRepository.releaseConnections(conID);
+            return packageid;
+        }
+
+        public List<Card> DrawPackage(User user)
+        {
+            //check money of user
+            int money = GetMoneyFromUser(user);
+            if (money < 5)
+            {
+                throw new ResponseException("Not enough money for buying a card package",403);
+            }
+
+
+
+            //check available packages
+            int packageid = getAvailablePackage();
+
+
+            Tuple<int, IDbConnection> pr = PostgresRepository.getConnection();
+
+            int conID = pr.Item1;
+            IDbConnection con = pr.Item2;
+            IDbTransaction trans = con.BeginTransaction();
+            
+            IDbCommand stackCommand = con.CreateCommand();
+            
+            stackCommand.CommandText = @"UPDATE stacks SET user_id = @userid WHERE user_id IS NULL and (card_id IN (SELECT s.card_id FROM stacks s INNER JOIN cards ON cards.id = s.card_id WHERE (cards.packageid = @packageid)));";
+
+            NpgsqlCommand stack = stackCommand as NpgsqlCommand;
+
+            stack.Parameters.Add("packageid", NpgsqlDbType.Integer);
+            stack.Parameters.Add("userid", NpgsqlDbType.Varchar, 255);
+
+            stack.Parameters["packageid"].Value = packageid;
+            stack.Parameters["userid"].Value = user.Id;
+
+            var changedRows = stack.ExecuteNonQuery();
+
+            if(changedRows != 5)
+            {
+                trans.Rollback();
+                PostgresRepository.releaseConnections(conID);
+                throw new ResponseException("cards could not be asigned",500);
+            }
+
+
+
+            IDbCommand cardCommand = con.CreateCommand();
+            cardCommand.CommandText = "SELECT id, name,  type, element, damage FROM cards Where packageid = @packageid;";
+
+            NpgsqlCommand card = cardCommand as NpgsqlCommand;
+
+            card.Parameters.Add("packageid", NpgsqlDbType.Integer);
+
+            card.Parameters["packageid"].Value = packageid;
+
+            IDataReader cards = cardCommand.ExecuteReader();
+
+            List<Card> package = new List<Card>();
+
+
+            while(cards.Read())
+            {
+                Card packageCard = new Card();
+                packageCard.Id = cards.GetString(0);
+                packageCard.Name = cards.GetString(1);
+                packageCard.Type = (Species)cards.GetInt32(2);
+                packageCard.Element = (Element)cards.GetInt32(2);
+                packageCard.Damage = cards.GetInt32(2);
+                package.Add(packageCard);
+            }
+
+            if(package.Count != 5)
+            {
+                trans.Rollback();
+                cards.Close();
+                PostgresRepository.releaseConnections(conID);
+                throw new ResponseException("cards could not be retrieved", 500);
+            }
+
+            cards.Close();
+
+            IDbCommand userCommand = con.CreateCommand();
+            userCommand.CommandText = "UPDATE users SET coins=@coins WHERE id = @userid;";
+
+            NpgsqlCommand userC = userCommand as NpgsqlCommand;
+
+            userC.Parameters.Add("userid", NpgsqlDbType.Varchar, 255);
+            userC.Parameters.Add("coins", NpgsqlDbType.Integer);
+
+            userC.Parameters["userid"].Value = user.Id;
+            userC.Parameters["coins"].Value = money - 5;
+
+            int userResult = userCommand.ExecuteNonQuery();
+
+            if(userResult != 1)
+            {
+                trans.Rollback();
+                PostgresRepository.releaseConnections(conID);
+                throw new ResponseException("coins could not be deducted", 500);
+            }
+
+
+            trans.Commit();
+            cards.Close();
+            PostgresRepository.releaseConnections(conID);
+            return package;
+
+
+
+
+
+
+
+        }
+
+        public Card GetCard(string cardid)
+        {
+            Tuple<int, IDbConnection> pr = PostgresRepository.getConnection();
+
+            int conID = pr.Item1;
+            IDbConnection con = pr.Item2;
+
+
+            //get unaquired package
+            IDbCommand command = con.CreateCommand();
+            command.CommandText = @"SELECT id, name, packageid,type, element FROM cards WHERE id = @cardid;";
+
+            NpgsqlCommand c = command as NpgsqlCommand;
+
+            c.Parameters.Add("cardid", NpgsqlDbType.Varchar, 255);
+            c.Parameters["cardid"].Value = cardid;
+
+            var result = command.ExecuteReader();
+
+            if(result.Read())
+            {
+                Card card = new Card();
+                card.Id = result.GetString(0);
+                card.Name = result.GetString(1);
+                card.Type = (Species)result.GetInt32(2);
+                card.Element = (Element)result.GetInt32(2);
+                card.Damage = result.GetInt32(2);
+                result.Close();
+                PostgresRepository.releaseConnections(conID);
+                return card;
+
+            }
+
+            result.Close();
+            PostgresRepository.releaseConnections(conID);
+            return null;
+        }
+
         /*public void UpdateDeck(User user, Card card, int in_deck)
         {
 

@@ -17,6 +17,7 @@ server.RegisterEndpoint("/users", new UserEndpoint());
 server.RegisterEndpoint("/sessions",new SessionEndpoint());
 server.RegisterEndpoint("/packages",new PackageEndpoint());
 server.RegisterEndpoint("/reset", new ResetEndpoint());
+server.RegisterEndpoint("/transactions/packages", new TransactionEndpoint());
 new HttpServer().run();
 
 /******** TO DO  ********/
