@@ -17,7 +17,11 @@ server.RegisterEndpoint("/users", new UserEndpoint());
 server.RegisterEndpoint("/sessions",new SessionEndpoint());
 server.RegisterEndpoint("/packages",new PackageEndpoint());
 server.RegisterEndpoint("/reset", new ResetEndpoint());
-server.RegisterEndpoint("/transactions/packages", new TransactionEndpoint());
+server.RegisterEndpoint("/transactions", new TransactionEndpoint());
+server.RegisterEndpoint("/cards", new CardEndpoint());
+server.RegisterEndpoint("/deck", new DeckEndpoint());
+server.RegisterEndpoint("/scoreboard", new ScoreboardEndpoint());
+server.RegisterEndpoint("/battles", new BattleEndpoint());
 new HttpServer().run();
 
 /******** TO DO  ********/

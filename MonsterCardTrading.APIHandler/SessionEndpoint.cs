@@ -42,10 +42,10 @@ namespace MonsterCardTrading.APIHandler
 
 
             }
-            catch (Exception e)
+            catch (ResponseException e)
             {
                 Console.WriteLine(e.Message);
-                response.setResponse(401, "FAILED", "{\"message\":\""+ e.Message + "\"}");
+                response.setResponse(e.ErrorCode, "FAILED", "{\"message\":\""+ e.Message + "\"}");
             }
         }
     }

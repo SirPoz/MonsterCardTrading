@@ -6,13 +6,9 @@ using System.Threading.Tasks;
 
 namespace MonsterCardTrading.Model
 {
-    public class Battle
+    public class Lobby
     {
         public string ?Id { get; set; }
-        public User ?Winner { get; set; }
-        public User ?Loser { get; set; }
-
-        public string? Lobby { get; set; }
-        public List<BattleLog> ?Rounds { get; set; }
+        public User ?Fighter { get; set; }
     }
 }

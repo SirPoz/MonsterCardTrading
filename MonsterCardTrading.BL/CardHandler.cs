@@ -79,21 +79,20 @@ namespace MonsterCardTrading.BL
 
         public List<Card> getCards(User user)
         {
-            return null;
+            List<Card> cards = db.GetCards(user);        
+            return cards; 
+            
         }
 
-        public List<Card> getDeck(User user, bool plain = false)
+        public List<Card> getDeck(User user)
         {
-            return null;
+            List<Card> cards = db.GetDeck(user);
+            return cards;
         }
 
-        public void setDeck(User user, List<Card> cards)
+        public void setDeck(User user, string[] cards)
         {
-            //check amount of cards
-
-            //check if cards belong to user
-
-            //save deck in stacks
+            db.SetDeck(user, cards);
         }
 
         private Card initCardFromPackage(Card card, int packageid)

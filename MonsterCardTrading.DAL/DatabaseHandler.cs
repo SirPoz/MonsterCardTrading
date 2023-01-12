@@ -30,22 +30,23 @@ namespace MonsterCardTrading.DAL
             int conID = pr.Item1;
             IDbConnection con = pr.Item2;
             IDbCommand command = con.CreateCommand();
-            command.CommandText = @"INSERT INTO users (id, username, password, profile_text, elo, coins) Values (@userid, @username, @password, @profile, @elo, @coins);";
+            command.CommandText = @"INSERT INTO users (id, username, password,  elo, coins, name) Values (@userid, @username, @password, @elo, @coins, @name);";
 
 
             NpgsqlCommand ?c = command as NpgsqlCommand;
 
             c.Parameters.Add("userid", NpgsqlDbType.Varchar, 255);
+            c.Parameters.Add("name", NpgsqlDbType.Varchar, 255);
             c.Parameters.Add("username", NpgsqlDbType.Varchar, 255);
             c.Parameters.Add("password", NpgsqlDbType.Varchar, 255);
-            c.Parameters.Add("profile", NpgsqlDbType.Varchar, 255);
             c.Parameters.Add("elo", NpgsqlDbType.Integer);
             c.Parameters.Add("coins", NpgsqlDbType.Integer);
 
+            
             c.Parameters["userid"].Value = user.Id;
             c.Parameters["username"].Value = user.Username;
             c.Parameters["password"].Value = user.Password;
-            c.Parameters["profile"].Value = user.Profile;
+            c.Parameters["name"].Value = user.Username;
             c.Parameters["elo"].Value = user.ELO;
             c.Parameters["coins"].Value = user.Coins;
 
@@ -78,21 +79,23 @@ namespace MonsterCardTrading.DAL
             int conID = pr.Item1;
             IDbConnection con = pr.Item2;
             IDbCommand command = con.CreateCommand();
-            command.CommandText = @"UPDATE users SET username = @username, SET password = @password, SET profile_text = @profile, SET elo = @elo, SET coins = @coins WHERE id = @userid;";
+            command.CommandText = @"UPDATE users SET profile_text = @profile,  picture = @picture,  elo = @elo, coins = @coins,  name = @name WHERE id = @userid;";
 
             NpgsqlCommand ?c = command as NpgsqlCommand;
 
-            c.Parameters.Add("username", NpgsqlDbType.Varchar, 255);
-            c.Parameters.Add("password", NpgsqlDbType.Varchar, 255);
+            c.Parameters.Add("userid", NpgsqlDbType.Varchar, 255);
             c.Parameters.Add("profile", NpgsqlDbType.Varchar, 255);
+            c.Parameters.Add("picture", NpgsqlDbType.Varchar, 255);
+            c.Parameters.Add("name", NpgsqlDbType.Varchar, 255);
             c.Parameters.Add("elo", NpgsqlDbType.Integer);
             c.Parameters.Add("coins", NpgsqlDbType.Integer);
 
-            c.Parameters["username"].Value = user.Username;
-            c.Parameters["password"].Value = user.Password;
+            c.Parameters["userid"].Value = user.Id;
+            c.Parameters["picture"].Value = user.Picture;
             c.Parameters["profile"].Value = user.Profile;
             c.Parameters["elo"].Value = user.ELO;
             c.Parameters["coins"].Value = user.Coins;
+            c.Parameters["name"].Value = user.Name;
 
             int result = command.ExecuteNonQuery();
             PostgresRepository.releaseConnections(conID);
@@ -111,7 +114,7 @@ namespace MonsterCardTrading.DAL
             int conID = pr.Item1;
             IDbConnection con = pr.Item2;
             IDbCommand command = con.CreateCommand();
-            command.CommandText = @"SELECT id, username, password, profile_text, elo, coins FROM users WHERE username = @username;";
+            command.CommandText = @"SELECT id, username, password, profile_text, elo, coins, picture, name FROM users WHERE username = @username;";
 
             NpgsqlCommand ?c = command as NpgsqlCommand;
 
@@ -130,6 +133,48 @@ namespace MonsterCardTrading.DAL
                 user.Profile = result.GetString(3);
                 user.ELO = result.GetInt32(4);
                 user.Coins = result.GetInt32(5);
+                user.Picture = result.GetString(6);
+                user.Name = result.GetString(7);
+
+                result.Close();
+                PostgresRepository.releaseConnections(conID);
+
+                return user;
+            }
+
+            result.Close();
+            PostgresRepository.releaseConnections(conID);
+            throw new Exception("User not found");
+        }
+
+        public User GetUserFromId(string id)
+        {
+            Tuple<int, IDbConnection> pr = PostgresRepository.getConnection();
+
+            int conID = pr.Item1;
+            IDbConnection con = pr.Item2;
+            IDbCommand command = con.CreateCommand();
+            command.CommandText = @"SELECT id, username, password, profile_text, elo, coins, picture, name FROM users WHERE id = @id;";
+
+            NpgsqlCommand? c = command as NpgsqlCommand;
+
+            c.Parameters.Add("id", NpgsqlDbType.Varchar, 255);
+            c.Parameters["id"].Value = id;
+
+            IDataReader result = command.ExecuteReader();
+
+
+            if (result.Read())
+            {
+                User user = new User();
+                user.Id = result.GetString(0);
+                user.Username = result.GetString(1);
+                user.Password = result.GetString(2);
+                user.Profile = result.GetString(3);
+                user.ELO = result.GetInt32(4);
+                user.Coins = result.GetInt32(5);
+                user.Picture = result.GetString(6);
+                user.Name = result.GetString(7);
 
                 result.Close();
                 PostgresRepository.releaseConnections(conID);
@@ -180,7 +225,7 @@ namespace MonsterCardTrading.DAL
             int conID = pr.Item1;
             IDbConnection con = pr.Item2;
             IDbCommand command = con.CreateCommand();
-            command.CommandText = @"SELECT id, username, profile_text, elo, coins FROM users WHERE token = @token;";
+            command.CommandText = @"SELECT id, username, profile_text, elo, coins, picture, name FROM users WHERE token = @token;";
 
             NpgsqlCommand? c = command as NpgsqlCommand;
 
@@ -200,6 +245,8 @@ namespace MonsterCardTrading.DAL
                 user.Profile = result.GetString(2);
                 user.ELO = result.GetInt32(3);
                 user.Coins = result.GetInt32(4);
+                user.Picture = result.GetString(5);
+                user.Name = result.GetString(6);
 
                 result.Close();
                 PostgresRepository.releaseConnections(conID);
@@ -275,7 +322,7 @@ namespace MonsterCardTrading.DAL
 
             result.Close();
             PostgresRepository.releaseConnections(conID);
-            throw new Exception("invalid username or password");
+            throw new ResponseException("invalid username or password",401);
         }
 
         public bool CheckUsernameExists(string username)
@@ -593,7 +640,7 @@ namespace MonsterCardTrading.DAL
 
             //get unaquired package
             IDbCommand command = con.CreateCommand();
-            command.CommandText = @"SELECT id, name, packageid,type, element FROM cards WHERE id = @cardid;";
+            command.CommandText = @"SELECT id, name, packageid,type, element, damage FROM cards WHERE id = @cardid;";
 
             NpgsqlCommand c = command as NpgsqlCommand;
 
@@ -607,9 +654,10 @@ namespace MonsterCardTrading.DAL
                 Card card = new Card();
                 card.Id = result.GetString(0);
                 card.Name = result.GetString(1);
-                card.Type = (Species)result.GetInt32(2);
-                card.Element = (Element)result.GetInt32(2);
-                card.Damage = result.GetInt32(2);
+                card.packageid = result.GetInt32(2);
+                card.Type = (Species)result.GetInt32(3);
+                card.Element = (Element)result.GetInt32(4);
+                card.Damage = result.GetInt32(5);
                 result.Close();
                 PostgresRepository.releaseConnections(conID);
                 return card;
@@ -619,6 +667,319 @@ namespace MonsterCardTrading.DAL
             result.Close();
             PostgresRepository.releaseConnections(conID);
             return null;
+        }
+
+        public List<Card> GetCards(User user)
+        {
+            Tuple<int, IDbConnection> pr = PostgresRepository.getConnection();
+
+            int conID = pr.Item1;
+            IDbConnection con = pr.Item2;
+
+
+            //get unaquired package
+            IDbCommand command = con.CreateCommand();
+            command.CommandText = @"SELECT cards.id, name, packageid, type, element, damage FROM cards JOIN stacks on stacks.card_id = cards.id WHERE stacks.user_id = @userid;";
+
+            NpgsqlCommand c = command as NpgsqlCommand;
+
+            c.Parameters.Add("userid", NpgsqlDbType.Varchar, 255);
+            c.Parameters["userid"].Value = user.Id;
+
+            var result = command.ExecuteReader();
+
+            List<Card> cardList = new List<Card>();
+
+            while(result.Read())
+            {
+                Card card = new Card();
+                card.Id = result.GetString(0);
+                card.Name = result.GetString(1);
+                card.packageid = result.GetInt32(2);
+                card.Type = (Species)result.GetInt32(3);
+                card.Element = (Element)result.GetInt32(4);
+                card.Damage = result.GetInt32(5);
+                cardList.Add(card);
+
+            }
+
+            result.Close();
+            PostgresRepository.releaseConnections(conID);
+            return cardList;
+        }
+
+        public List<Card> GetDeck(User user)
+        {
+            Tuple<int, IDbConnection> pr = PostgresRepository.getConnection();
+
+            int conID = pr.Item1;
+            IDbConnection con = pr.Item2;
+
+
+            //get unaquired package
+            IDbCommand command = con.CreateCommand();
+            command.CommandText = @"SELECT cards.id, name, packageid, type, element, damage FROM cards JOIN stacks on stacks.card_id = cards.id WHERE stacks.user_id = @userid and stacks.in_deck = 1;";
+
+            NpgsqlCommand c = command as NpgsqlCommand;
+
+            c.Parameters.Add("userid", NpgsqlDbType.Varchar, 255);
+            c.Parameters["userid"].Value = user.Id;
+            
+            var result = command.ExecuteReader();
+
+            List<Card> cardList = new List<Card>();
+
+            while (result.Read())
+            {
+                Card card = new Card();
+                card.Id = result.GetString(0);
+                card.Name = result.GetString(1);
+                card.packageid = result.GetInt32(2);
+                card.Type = (Species)result.GetInt32(3);
+                card.Element = (Element)result.GetInt32(4);
+                card.Damage = result.GetInt32(5);
+                cardList.Add(card);
+
+            }
+
+            result.Close();
+            PostgresRepository.releaseConnections(conID);
+            return cardList;
+        }
+
+        public void SetDeck(User user,string[] cardis)
+        {
+            Tuple<int, IDbConnection> pr = PostgresRepository.getConnection();
+
+            int conID = pr.Item1;
+            IDbConnection con = pr.Item2;
+            IDbTransaction trans = con.BeginTransaction();
+
+            //reset current deck
+            IDbCommand resetCommand = con.CreateCommand();
+            resetCommand.CommandText = @"UPDATE stacks SET in_deck = 0 WHERE user_id = @userid;";
+            NpgsqlCommand r = resetCommand as NpgsqlCommand;
+
+           
+            r.Parameters.Add("userid", NpgsqlDbType.Varchar, 255);
+            r.Parameters["userid"].Value = user.Id;
+
+            resetCommand.ExecuteNonQuery();
+
+
+            IDbCommand command = con.CreateCommand();
+            command.CommandText = @"UPDATE stacks SET in_deck = 1 WHERE card_id = @cardid and user_id = @userid;";
+
+            NpgsqlCommand c = command as NpgsqlCommand;
+
+            c.Parameters.Add("cardid", NpgsqlDbType.Varchar, 255);
+            c.Parameters.Add("userid", NpgsqlDbType.Varchar, 255);
+
+            c.Parameters["userid"].Value = user.Id;
+            int result;
+            foreach(string card in cardis)
+            {
+                c.Parameters["cardid"].Value = card;
+                result = command.ExecuteNonQuery();
+                if(result == 0)
+                {
+                    trans.Rollback();
+                    PostgresRepository.releaseConnections(conID);
+                    throw new ResponseException("At least one of the provided cards does not belong to the user or is not available.", 403);
+                }
+            }
+            trans.Commit();
+            PostgresRepository.releaseConnections(conID);
+
+
+
+        }
+
+        public List<ScoreEntry> ScoreBoard()
+        {
+            Tuple<int, IDbConnection> pr = PostgresRepository.getConnection();
+
+            int conID = pr.Item1;
+            IDbConnection con = pr.Item2;
+    
+            IDbCommand command = con.CreateCommand();
+            command.CommandText = @"SELECT id, name, profile_text, picture, elo FROM users ORDER BY ELO desc";
+
+            IDataReader result = command.ExecuteReader();
+
+            List<ScoreEntry> scores = new List<ScoreEntry>();
+            int rank = 1;
+            int lastELO = 0;
+            while(result.Read())
+            {
+                ScoreEntry se = new ScoreEntry();
+                se.Id = result.GetString(0);
+                se.Name = result.GetString(1);
+                se.Profile = result.GetString(2);
+                se.Picture = result.GetString(3);
+                se.ELO = result.GetInt32(4);
+
+                if(se.ELO == lastELO)
+                {
+                    rank--;
+                }
+                se.Rank = rank;
+                lastELO = result.GetInt32(4);
+                rank++;
+
+                scores.Add(se);
+            }
+
+            result.Close();
+            PostgresRepository.releaseConnections(conID);
+
+            return scores;
+        }
+
+        public string AddContestant(User user)
+        {
+            Tuple<int, IDbConnection> pr = PostgresRepository.getConnection();
+
+            int conID = pr.Item1;
+            IDbConnection con = pr.Item2;
+
+            IDbCommand command = con.CreateCommand();
+            command.CommandText = @"INSERT INTO battlelobby (id, user_id) VALUES (@id, @userid)";
+            NpgsqlCommand c = command as NpgsqlCommand;
+
+            Guid guid = new Guid();
+            string id = guid.ToString();
+
+            c.Parameters.Add("id", NpgsqlDbType.Varchar, 255);
+            c.Parameters.Add("userid", NpgsqlDbType.Varchar, 255);
+            c.Parameters["id"].Value = id;
+            c.Parameters["userid"].Value = user.Id;
+            int result = command.ExecuteNonQuery();
+
+            if(result == 0)
+            {
+                PostgresRepository.releaseConnections(conID);
+                throw new ResponseException("Could not enter Lobby", 444);
+            }
+
+            PostgresRepository.releaseConnections(conID);
+            return id;
+        }
+
+        public int GetContestants()
+        {
+            Tuple<int, IDbConnection> pr = PostgresRepository.getConnection();
+
+            int conID = pr.Item1;
+            IDbConnection con = pr.Item2;
+
+            IDbCommand command = con.CreateCommand();
+            command.CommandText = "SELECT COUNT(*) AS fighters FROM battlelobby";
+
+            IDataReader result = command.ExecuteReader();
+
+            int fighters = 0;
+            if(result.Read())
+            {
+                fighters = result.GetInt32(0);
+            }
+            result.Close();
+            PostgresRepository.releaseConnections(conID);
+            return fighters;
+
+        }
+
+        public Lobby GetOldestContestant()
+        {
+            Tuple<int, IDbConnection> pr = PostgresRepository.getConnection();
+
+            int conID = pr.Item1;
+            IDbConnection con = pr.Item2;
+
+            IDbCommand command = con.CreateCommand();
+            command.CommandText = "SELECT id, user_id  FROM battlelobby Order By entry desc Limit 1";
+
+            IDataReader result = command.ExecuteReader();
+
+            Lobby lobby = new Lobby();
+            lobby.Fighter = new User();
+            if (result.Read())
+            {
+                lobby.Id = result.GetString(0);
+                lobby.Fighter.Id = result.GetString(1);
+            }
+            else
+            {
+                result.Close();
+                PostgresRepository.releaseConnections(conID);
+                throw new ResponseException("No fighter available", 444);
+            }
+
+            result.Close();
+            PostgresRepository.releaseConnections(conID);
+            return lobby;
+        }
+
+        public Battle GetBattleFromLobby(string lobby)
+        {
+            Tuple<int, IDbConnection> pr = PostgresRepository.getConnection();
+
+            int conID = pr.Item1;
+            IDbConnection con = pr.Item2;
+
+            IDbCommand battleCommand = con.CreateCommand();
+            battleCommand.CommandText = "SELECT id, winner, loser FROM battles Where lobby_id = @lobbyid";
+            NpgsqlCommand b = battleCommand as NpgsqlCommand;
+
+            b.Parameters.Add("lobbyid", NpgsqlDbType.Varchar, 255);
+            b.Parameters["lobbyid"].Value = lobby;
+
+            IDataReader resultBattle = battleCommand.ExecuteReader();
+
+            Battle battle;
+            if(resultBattle.Read())
+            {
+                battle = new Battle();
+                battle.Id = resultBattle.GetString(0);
+                battle.Winner = GetUserFromId(resultBattle.GetString(1));
+                battle.Loser = GetUserFromId(resultBattle.GetString(2));
+
+            }
+            else
+            {
+                resultBattle.Close();
+                PostgresRepository.releaseConnections(conID);
+                return null;
+            }
+            resultBattle.Close();
+
+            IDbCommand logCommand = con.CreateCommand();
+            logCommand.CommandText = "SELECT id, round,  winning_card_id, losing_card_id, winning_user_id, losing_user_id, winning_damage, losing_damage, win_condition FROM battles Where battle_id = @battleid Order by round asc";
+            NpgsqlCommand l = logCommand as NpgsqlCommand;
+
+
+            l.Parameters.Add("battleid", NpgsqlDbType.Varchar, 255);
+            l.Parameters["battleid"].Value = battle.Id;
+
+            IDataReader resultLog = logCommand.ExecuteReader();
+            while(resultLog.Read())
+            {
+                BattleLog log = new BattleLog();
+                log.Id = resultLog.GetString(0);
+                log.Round = resultLog.GetInt32(1);
+                log.WinningCard = GetCard(resultLog.GetString(2));
+                log.LosingCard = GetCard(resultLog.GetString(3));
+                log.RoundWinner = GetUserFromId(resultLog.GetString(4));
+                log.RoundLoser = GetUserFromId(resultLog.GetString(5));
+                log.WinningDamage = resultLog.GetInt32(6);
+                log.LosingDamage = resultLog.GetInt32(7);
+                log.SpecialWinCondition = resultLog.GetString(8);
+                battle.Rounds.Add(log);
+            }
+            resultLog.Close();
+            PostgresRepository.releaseConnections(conID);
+            return battle;
+
         }
 
         /*public void UpdateDeck(User user, Card card, int in_deck)

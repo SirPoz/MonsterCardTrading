@@ -30,10 +30,9 @@ namespace MonsterCardTrading.BL
             Guid id = Guid.NewGuid();
             user.Id = id.ToString();
             user.Username = username;
+            user.Username = username;
             user.Password = password;
-            user.hash = password;
             user.ELO = 100;
-            user.Profile = "Hello I am new!";
             user.Coins = 20;
             
             try
@@ -75,6 +74,24 @@ namespace MonsterCardTrading.BL
 
         }
 
+        public void updateUser(User current, User changes)
+        {
+            if(changes.Name != null)
+            {
+                current.Name = changes.Name;
+            }
+            if(changes.Profile != null)
+            {
+                current.Profile = changes.Profile;
+            }
+            if(changes.Picture != null)
+            {
+                current.Picture = changes.Picture;
+            }
+
+            db.UpdateUser(current);
+        }
+
         public void deleteUser(User user)
         {
 
@@ -90,9 +107,9 @@ namespace MonsterCardTrading.BL
 
         }
 
-        public void scoreBoard()
+        public List<ScoreEntry> scoreBoard()
         {
-
+            return db.ScoreBoard();
         }
 
         

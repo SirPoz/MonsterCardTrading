@@ -11,31 +11,30 @@ using System.Threading.Tasks;
 
 namespace MonsterCardTrading.APIHandler
 {
-    public class TransactionEndpoint : IHttpEndpoint
+    public class ScoreboardEndpoint : IHttpEndpoint
     {
         public void HandleRequest(HttpRequest request, HttpResponse response)
         {
-            switch (request.Method)
+            switch(request.Method)
             {
-                case "POST":
-                    AquirePackage(request, response);
+                case "GET":
+                    getScoreboard(request, response);
                     break;
             }
         }
 
-        private void AquirePackage(HttpRequest request, HttpResponse response)
+        private void getScoreboard(HttpRequest request, HttpResponse response)
         {
             try
             {
-                
-                CardHandler cardHandler = new CardHandler();
                 UserHandler userHandler = new UserHandler();
-
                 if (request.Headers.TryGetValue("Authorization", out string token))
                 {
+
+                    List<ScoreEntry> scoreboard = userHandler.scoreBoard();
+                    response.setResponse(200, "OK", "{\"message\":\"The scoreboard could be retrieved successfully.\",\"content\":[" + JsonSerializer.Serialize(scoreboard) + "]}");
                     
-                    List<Card> cards = cardHandler.aquirePackage(userHandler.userFromToken(token));
-                    response.setResponse(200, "OK", "{\"message\":\"A package has been successfully bought\",\"content\": \""+ JsonSerializer.Serialize(cards) + "\"}");
+                   
                 }
                 else
                 {
@@ -43,12 +42,11 @@ namespace MonsterCardTrading.APIHandler
                 }
 
 
-
             }
             catch (ResponseException e)
             {
-                Console.WriteLine(e.Message);
-                response.setResponse(e.ErrorCode, "FAILED", "{\"message\":\"" + e.Message + "\"}");
+
+                response.setResponse(e.ErrorCode, "Failed", "{\"message\":\"" + e.Message + "\"}");
             }
         }
     }

@@ -22,7 +22,10 @@ namespace MonsterCardTrading.APIHandler
                     CreateUser(request,response);
                     break;
                 case "GET":
-                    GetUsers(request,response);
+                    GetUser(request,response);
+                    break;
+                case "PUT":
+                    ChangeUser(request, response);
                     break;
             }
         }
@@ -64,21 +67,74 @@ namespace MonsterCardTrading.APIHandler
             //do something
         }
 
-        private void GetUsers(HttpRequest request, HttpResponse response)
+        private void GetUser(HttpRequest request, HttpResponse response)
         {
             try
             {
-                JsonSerializer.Deserialize<User>(request.Content);
+                UserHandler userHandler = new UserHandler();
+                if (request.Headers.TryGetValue("Authorization", out string token) && request.Headers.TryGetValue("PathParam", out string username))
+                {
+                    User user = userHandler.userFromToken(token);
 
-                response.ResponseCode = 200;
-                response.ResponseContent = "application/json";
+                    if (user.Username == username)
+                    {
+                        response.setResponse(200, "OK", "{\"message\":\"Data successfully retrieved\",\"content\":[" + JsonSerializer.Serialize(user)+"]}");
+                    }
+                    else
+                    {
+                        throw new ResponseException("UnauthorizedError", 401);
+                    }
+                }
+                else
+                {
+                    throw new ResponseException("UnauthorizedError", 401);
+                }
+
 
             }
-            catch (Exception)
+            catch (ResponseException e)
             {
-                response.ResponseCode = 400;
-                response.ResponseContent = "application/json";
-                response.ResponseText = "failed to deserialize request";
+
+                response.setResponse(e.ErrorCode, "Failed", "{\"message\":\"" + e.Message + "\"}");
+            }
+        }
+
+        private void ChangeUser(HttpRequest request, HttpResponse response)
+        {
+            try
+            {
+                var userNew = JsonSerializer.Deserialize<User>(request.Content);
+
+                if(userNew == null)
+                {
+                    throw new ResponseException("Could not deserialize request", 400);
+                }
+                UserHandler userHandler = new UserHandler();
+                if (request.Headers.TryGetValue("Authorization", out string token) && request.Headers.TryGetValue("User", out string username))
+                {
+                    User currentUser = userHandler.userFromToken(token);
+
+                    if (currentUser.Username == username)
+                    {
+                        userHandler.updateUser(currentUser, userNew);
+                        response.setResponse(200, "OK", "{\"message\":\"User sucessfully updated\"}");
+                    }
+                    else
+                    {
+                        throw new ResponseException("UnauthorizedError", 401);
+                    }
+                }
+                else
+                {
+                    throw new ResponseException("UnauthorizedError", 401);
+                }
+
+
+            }
+            catch (ResponseException e)
+            {
+
+                response.setResponse(e.ErrorCode, "Failed", "{\"message\":\"" + e.Message + "\"}");
             }
         }
     }
