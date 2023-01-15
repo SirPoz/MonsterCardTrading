@@ -24,6 +24,10 @@ namespace MonsterCardTrading.APIHandler
                 case "PUT":
                     ConfigureDeck(request, response);
                     break;
+
+                default:
+                    response.setResponse(404, "FAILED", "{\"message\":\"No " + request.Method + " for " + request.Path + "\"}");
+                    break;
             }
         }
 
@@ -45,7 +49,21 @@ namespace MonsterCardTrading.APIHandler
                     }
                     else
                     {
-                        response.setResponse(200, "OK", "{\"message\":\"The deck has cards\",\"content\": " + JsonSerializer.Serialize(deck) + "}");
+                        request.Headers.TryGetValue("format", out string format);
+                        if(format == "plain")
+                        {
+                            string cards = "";
+                            foreach(Card card in deck)
+                            {
+                                cards += card.Name + ", ";
+                            }
+                            response.setResponse(200, "OK", cards);
+                        }
+                        else
+                        {
+                            response.setResponse(200, "OK", "{\"message\":\"The deck has cards\",\"content\": " + JsonSerializer.Serialize(deck) + "}");
+                        }
+                        
                     }
 
                 }

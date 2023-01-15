@@ -19,7 +19,9 @@ namespace MonsterCardTrading.Model
         public User ?RoundWinner { get; set; }
         public User ?RoundLoser { get; set; }
 
-        public string ?SpecialWinCondition { get; set; }
+        public List<string> ?SpecialWinCondition { get; set; }
+
+        public bool Draw { get; set; }
 
     }
 }

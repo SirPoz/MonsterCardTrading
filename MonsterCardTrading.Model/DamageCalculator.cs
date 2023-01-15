@@ -9,7 +9,7 @@ namespace MonsterCardTrading.Model
     public class DamageCalculator
     {
         public float ?Damage { get; set; }
-        public string SpecialWin { get; set; }
+        public List<string> SpecialWin { get; set; }
         public bool Kill { get; set; }
 
         public DamageCalculator(Card card)
@@ -23,7 +23,7 @@ namespace MonsterCardTrading.Model
                 Damage = 0;
             }
             
-            SpecialWin = "";
+            SpecialWin = new List<string>();
             Kill = false;
         }
     }

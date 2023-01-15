@@ -14,31 +14,31 @@ namespace MonsterCardTrading.BL.BattleDecorator
             if(attacker.Type == Species.Goblin && defender.Type == Species.Dragon)
             {
                 dmg.Damage = 0;
-                dmg.SpecialWin = "Goblins are too afraid of Dragons to attack.";
+                dmg.SpecialWin.Add("Goblins are too afraid of Dragons to attack.");
                 return dmg;
             }
             if (attacker.Type == Species.Ork && defender.Type == Species.Wizzard)
             {
                 dmg.Damage = 0;
-                dmg.SpecialWin = "Wizzard can control Orks so they are not able to damage them.";
+                dmg.SpecialWin.Add("Wizzard can control Orks so they are not able to damage them.");
                 return dmg;
             }
             if (attacker.Type == Species.Spell && attacker.Element == Element.Water && defender.Type == Species.Knight)
             {
                 dmg.Kill = true;
-                dmg.SpecialWin = "The armor of Knights is so heavy that WaterSpells make them drown them instantly.";
+                dmg.SpecialWin.Add("The armor of Knights is so heavy that WaterSpells make them drown them instantly.");
                 return dmg;
             }
             if (attacker.Type == Species.Spell && defender.Type == Species.Kraken)
             {
                 dmg.Damage = 0;
-                dmg.SpecialWin = "The Kraken is immune against spells.";
+                dmg.SpecialWin.Add("The Kraken is immune against spells.");
                 return dmg;
             }
             if (attacker.Type == Species.Dragon && defender.Element == Element.Fire && defender.Type == Species.Elf)
             {
                 dmg.Damage = 0;
-                dmg.SpecialWin = "The FireElves know Dragons since they were little and can evade their attacks.";
+                dmg.SpecialWin.Add("The FireElves know Dragons since they were little and can evade their attacks.");
                 return dmg;
             }
 

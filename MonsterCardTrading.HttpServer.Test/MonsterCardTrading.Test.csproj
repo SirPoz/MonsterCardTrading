@@ -18,6 +18,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\FirstHttpServer\MonsterCardTrading.HttpServer.csproj" />
+    <ProjectReference Include="..\MonsterCardTrading.APIHandler\MonsterCardTrading.APIHandler.csproj" />
+    <ProjectReference Include="..\MonsterCardTrading.BL\MonsterCardTrading.BL.csproj" />
+    <ProjectReference Include="..\MonsterCardTrading.DAL\MonsterCardTrading.DAL.csproj" />
+    <ProjectReference Include="..\MonsterCardTrading.Model\MonsterCardTrading.Model.csproj" />
   </ItemGroup>
 
 </Project>

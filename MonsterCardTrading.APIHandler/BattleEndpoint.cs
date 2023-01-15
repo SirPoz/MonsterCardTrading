@@ -20,6 +20,9 @@ namespace MonsterCardTrading.APIHandler
                 case "POST":
                     CreateBattleRequest(request, response);
                     break;
+                default:
+                    response.setResponse(404, "FAILED", "{\"message\":\"No " + request.Method + " for " + request.Path + "\"}");
+                    break;
             }
         }
 

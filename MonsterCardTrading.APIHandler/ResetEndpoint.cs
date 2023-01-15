@@ -30,6 +30,9 @@ namespace MonsterCardTrading.APIHandler
                         response.setResponse(e.ErrorCode, "FAILED", "{\"message\":\""+e.Message+"\"}");
                     }
                     break;
+                default:
+                    response.setResponse(404, "FAILED", "{\"message\":\"No " + request.Method + " for " + request.Path + "\"}");
+                    break;
             }
         }
     }

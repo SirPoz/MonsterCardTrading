@@ -30,7 +30,6 @@ namespace MonsterCardTrading.BL
             Guid id = Guid.NewGuid();
             user.Id = id.ToString();
             user.Username = username;
-            user.Username = username;
             user.Password = password;
             user.ELO = 100;
             user.Coins = 20;
@@ -69,8 +68,13 @@ namespace MonsterCardTrading.BL
 
         public User userFromToken(string token)
         {
-            string[] header = token.Split(' ');
-            return session.getSession(header[2]);
+            if(token.Contains(" "))
+            {
+                string[] header = token.Split(' ');
+                return session.getSession(header[2]);
+            }
+            return session.getSession(token);
+
 
         }
 
@@ -94,17 +98,15 @@ namespace MonsterCardTrading.BL
 
         public void deleteUser(User user)
         {
-
+            db.DeleteUser(user);
         }
 
-        public void editUser(User user)
+        
+
+        public Stats getStats(User user)
         {
-
-        }
-
-        public void showStats(User user)
-        {
-
+            return db.GetStats(user);
+            
         }
 
         public List<ScoreEntry> scoreBoard()

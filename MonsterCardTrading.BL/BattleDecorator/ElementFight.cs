@@ -13,10 +13,8 @@ namespace MonsterCardTrading.BL.BattleDecorator
         {
             if(attacker.Type != Species.Spell && defender.Type != Species.Spell)
             {
-                if(dmg.SpecialWin != null && dmg.SpecialWin.Length == 0)
-                {
-                    dmg.SpecialWin = "The element type does not effect pure monster fights.";
-                }
+                
+                dmg.SpecialWin.Add("The element type does not effect pure monster fights.");
                 return dmg;
             }
             switch(attacker.Element)
@@ -25,10 +23,12 @@ namespace MonsterCardTrading.BL.BattleDecorator
                     if(defender.Element == Element.Water)
                     {
                         dmg.Damage /= 2;
+                        dmg.SpecialWin.Add("Fire is weak against Water");
                     }
                     if (defender.Element == Element.Normal)
                     {
                         dmg.Damage *= 2;
+                        dmg.SpecialWin.Add("Fire is strong against Normal");
                     }
                     return dmg;
 
@@ -38,10 +38,12 @@ namespace MonsterCardTrading.BL.BattleDecorator
                     if (defender.Element == Element.Normal)
                     {
                         dmg.Damage /= 2;
+                        dmg.SpecialWin.Add("Water is weak against Normal");
                     }
                     if (defender.Element == Element.Fire)
                     {
                         dmg.Damage *= 2;
+                        dmg.SpecialWin.Add("Water is strong against Fire");
                     }
                     return dmg;
                     
@@ -51,10 +53,12 @@ namespace MonsterCardTrading.BL.BattleDecorator
                     if (defender.Element == Element.Fire)
                     {
                         dmg.Damage /= 2;
+                        dmg.SpecialWin.Add("Normal is weak against Fire");
                     }
                     if (defender.Element == Element.Water)
                     {
                         dmg.Damage *= 2;
+                        dmg.SpecialWin.Add("Normal is strong against Water");
                     }
                     return dmg;
             }

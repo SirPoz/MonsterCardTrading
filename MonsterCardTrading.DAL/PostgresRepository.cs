@@ -19,35 +19,39 @@ namespace MonsterCardTrading.DAL
         private static Dictionary<int, bool> OpenConnections = new Dictionary<int, bool>();
         public static void setup(int connections)
         {
-            IDbConnection connection;
-            for (int i = 0; i < connections; i++)
+            for(int i = 0; i < connections; i++)
             {
-                connection = new NpgsqlConnection("Host=localhost;Username=swe1user;Password=swe1pw;Database=swe1user");
+                IDbConnection connection = new NpgsqlConnection("Host=localhost;Username=swe1user;Password=swe1pw;Database=swe1user");
                 connection.Open();
-                Connections.Add(i, connection);
-                OpenConnections.Add(i, false);
+                Connections.Add(Connections.Count, connection);
+                OpenConnections.Add(Connections.Count - 1, false);
             }
+               
+           
         }
 
         public static Tuple<int, IDbConnection> getConnection()
         {
-            Console.WriteLine("Openconnections: " + getOpenConnections());
-            for(int i = 0; i < Connections.Count; i++)
+            
+            foreach(var con in OpenConnections)
             {
-                if(!OpenConnections[i])
+                if(!con.Value)
                 {
-                    OpenConnections[i] = true;
-                    return new Tuple<int, IDbConnection>(i,Connections[i]);
+                    OpenConnections[con.Key] = true;
+                    return new Tuple<int, IDbConnection>(con.Key, Connections[con.Key]);
                 }
             }
-            Connections.Add(Connections.Count+1, new NpgsqlConnection("Host=localhost;Username=swe1user;Password=swe1pw;Database=swe1user"));
-            OpenConnections.Add(Connections.Count + 1, true);
+
+            IDbConnection connection = new NpgsqlConnection("Host=localhost;Username=swe1user;Password=swe1pw;Database=swe1user");
+            connection.Open();
+            Connections.Add(Connections.Count+1, connection);
+            OpenConnections.Add(Connections.Count, true);
             return new Tuple<int, IDbConnection>(Connections.Last().Key, Connections.Last().Value);
         }
 
         public static void releaseConnections(int i)
         {
-           
+            
             if (Connections[i].State != ConnectionState.Open)
             {
                 Connections[i].Open();
@@ -57,17 +61,31 @@ namespace MonsterCardTrading.DAL
             
         }
 
-        private static int getOpenConnections()
+        public static int getOpenConnections()
         {
             int count = 0;
             foreach(var con in OpenConnections)
             {
                 if(!con.Value)
                 {
+                   
                     count++;
                 }
             }
             return count;
+        }
+
+        public static void Close()
+        {
+            
+            foreach(var con in Connections)
+            {
+                    OpenConnections[con.Key] = true;
+                    Connections[con.Key].Close();
+            }
+
+            Connections.Clear();
+            OpenConnections.Clear();
         }
 
         /*public NpgsqlDataReader readDB(string command, List<NpgsqlParameter> parameters)

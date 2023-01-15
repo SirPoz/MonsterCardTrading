@@ -11,34 +11,39 @@ using System.Threading.Tasks;
 
 namespace MonsterCardTrading.APIHandler
 {
-    public class TransactionEndpoint : IHttpEndpoint
+    public class StatEndpoint : IHttpEndpoint
     {
         public void HandleRequest(HttpRequest request, HttpResponse response)
         {
-            switch (request.Method)
+            switch(request.Method)
             {
-                case "POST":
-                    AquirePackage(request, response);
+                case "GET":
+                    getStats(request, response);
                     break;
                 default:
                     response.setResponse(404, "FAILED", "{\"message\":\"No " + request.Method + " for " + request.Path + "\"}");
                     break;
             }
+            
+           
         }
 
-        private void AquirePackage(HttpRequest request, HttpResponse response)
+
+
+        private void getStats(HttpRequest request, HttpResponse response)
         {
             try
             {
-                
-                CardHandler cardHandler = new CardHandler();
+
                 UserHandler userHandler = new UserHandler();
 
                 if (request.Headers.TryGetValue("Authorization", out string token))
                 {
-                    
-                    List<Card> cards = cardHandler.aquirePackage(userHandler.userFromToken(token));
-                    response.setResponse(200, "OK", "{\"message\":\"A package has been successfully bought\",\"content\": \""+ JsonSerializer.Serialize(cards) + "\"}");
+
+                        Stats portfolio = userHandler.getStats(userHandler.userFromToken(token));       
+                        
+                        response.setResponse(200, "OK", "{\"message\":\"Stats could be loaded\",\"content\": " + JsonSerializer.Serialize(portfolio) + "}");
+
                 }
                 else
                 {

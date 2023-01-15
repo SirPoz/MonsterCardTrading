@@ -26,6 +26,11 @@ namespace MonsterCardTrading.BL
                 throw new ResponseException("Provided user is not \"admin\"", 403);
             }
 
+            if(stack == null || stack.Cards.Count != 5)
+            {
+                throw new ResponseException("Provided package has not the correct amount of cards", 403);
+            }
+
             //create package id
 
             int packageid = db.getMaxPackageId() + 1;
@@ -73,8 +78,6 @@ namespace MonsterCardTrading.BL
             {
                 return null;
             }
-           
-
         }
 
         public List<Card> getCards(User user)

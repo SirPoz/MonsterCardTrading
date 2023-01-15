@@ -22,8 +22,11 @@ server.RegisterEndpoint("/cards", new CardEndpoint());
 server.RegisterEndpoint("/deck", new DeckEndpoint());
 server.RegisterEndpoint("/scoreboard", new ScoreboardEndpoint());
 server.RegisterEndpoint("/battles", new BattleEndpoint());
+server.RegisterEndpoint("/stats", new StatEndpoint());
 new HttpServer().run();
 
+
+PostgresRepository.Close();
 /******** TO DO  ********/
 //
 //

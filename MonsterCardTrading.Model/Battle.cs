@@ -14,5 +14,7 @@ namespace MonsterCardTrading.Model
 
         public string? Lobby { get; set; }
         public List<BattleLog> ?Rounds { get; set; }
+
+        public bool Draw { get; set; }
     }
 }

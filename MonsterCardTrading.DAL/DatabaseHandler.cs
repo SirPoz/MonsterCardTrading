@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Reflection.Metadata;
+using System.Reflection.PortableExecutable;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -102,8 +103,36 @@ namespace MonsterCardTrading.DAL
 
             if (result != 1)
             {
-                throw new Exception("User could not be updated");
+                throw new ResponseException("User could not be updated",500);
             }
+
+        }
+
+        public void DeleteUser(User user)
+        {
+            Tuple<int, IDbConnection> pr = PostgresRepository.getConnection();
+
+            int conID = pr.Item1;
+            IDbConnection con = pr.Item2;
+            IDbCommand command = con.CreateCommand();
+            command.CommandText = @"DELETE FROM users WHERE id = @id;";
+
+            NpgsqlCommand? c = command as NpgsqlCommand;
+
+            c.Parameters.Add("id", NpgsqlDbType.Varchar, 255);
+            c.Parameters["id"].Value = user.Id;
+
+            int result = command.ExecuteNonQuery();
+
+            if(result != 1)
+            {
+                
+                PostgresRepository.releaseConnections(conID);
+                throw new ResponseException("User could not be deleted",500);
+            }
+
+            PostgresRepository.releaseConnections(conID);
+
 
         }
 
@@ -144,7 +173,7 @@ namespace MonsterCardTrading.DAL
 
             result.Close();
             PostgresRepository.releaseConnections(conID);
-            throw new Exception("User not found");
+            throw new ResponseException("User not found",400);
         }
 
         public User GetUserFromId(string id)
@@ -255,7 +284,7 @@ namespace MonsterCardTrading.DAL
 
             result.Close();
             PostgresRepository.releaseConnections(conID);
-            throw new ResponseException("Access token is missing or invalid",444);
+            throw new ResponseException("Access token is missing or invalid",401);
         }
 
         public int GetMoneyFromUser(User user)
@@ -356,30 +385,7 @@ namespace MonsterCardTrading.DAL
         }
 
 
-        public void DeleteUser(User user)
-        {
-            Tuple<int, IDbConnection> pr = PostgresRepository.getConnection();
-
-            int conID = pr.Item1;
-            IDbConnection con = pr.Item2;
-            IDbCommand command = con.CreateCommand();
-            command.CommandText = @"DELETE FROM users Where id = @userid;";
-
-            NpgsqlCommand ?c = command as NpgsqlCommand;
-
-            c.Parameters.Add("userid", NpgsqlDbType.Varchar, 255);
-            c.Parameters["userid"].Value = user.Id;
-
-            int result = command.ExecuteNonQuery();
-            PostgresRepository.releaseConnections(conID);
-            if (result != 1)
-            {
-               
-                
-                throw new Exception("User could not be deleted");
-            }
-
-        }
+        
         
         public void AddPackage(Stack package)
         {
@@ -847,7 +853,7 @@ namespace MonsterCardTrading.DAL
             command.CommandText = @"INSERT INTO battlelobby (id, user_id) VALUES (@id, @userid)";
             NpgsqlCommand c = command as NpgsqlCommand;
 
-            Guid guid = new Guid();
+            Guid guid = Guid.NewGuid();
             string id = guid.ToString();
 
             c.Parameters.Add("id", NpgsqlDbType.Varchar, 255);
@@ -928,7 +934,7 @@ namespace MonsterCardTrading.DAL
             IDbConnection con = pr.Item2;
 
             IDbCommand battleCommand = con.CreateCommand();
-            battleCommand.CommandText = "SELECT id, winner, loser FROM battles Where lobby_id = @lobbyid";
+            battleCommand.CommandText = "SELECT id, winner, loser, draw FROM battles Where lobby_id = @lobbyid";
             NpgsqlCommand b = battleCommand as NpgsqlCommand;
 
             b.Parameters.Add("lobbyid", NpgsqlDbType.Varchar, 255);
@@ -936,13 +942,15 @@ namespace MonsterCardTrading.DAL
 
             IDataReader resultBattle = battleCommand.ExecuteReader();
 
-            Battle battle;
-            if(resultBattle.Read())
+            Battle battle = new Battle();
+            battle.Rounds = new List<BattleLog>();
+            if (resultBattle.Read())
             {
-                battle = new Battle();
+                
                 battle.Id = resultBattle.GetString(0);
                 battle.Winner = GetUserFromId(resultBattle.GetString(1));
                 battle.Loser = GetUserFromId(resultBattle.GetString(2));
+                battle.Draw = (resultBattle.GetInt32(3) == 1);
 
             }
             else
@@ -954,7 +962,7 @@ namespace MonsterCardTrading.DAL
             resultBattle.Close();
 
             IDbCommand logCommand = con.CreateCommand();
-            logCommand.CommandText = "SELECT id, round,  winning_card_id, losing_card_id, winning_user_id, losing_user_id, winning_damage, losing_damage, win_condition FROM battles Where battle_id = @battleid Order by round asc";
+            logCommand.CommandText = "SELECT id, round,  winning_card_id, losing_card_id, winning_user_id, losing_user_id, winning_damage, losing_damage, win_condition, round, draw FROM battlelogs Where battle_id = @battleid Order by round asc";
             NpgsqlCommand l = logCommand as NpgsqlCommand;
 
 
@@ -973,7 +981,8 @@ namespace MonsterCardTrading.DAL
                 log.RoundLoser = GetUserFromId(resultLog.GetString(5));
                 log.WinningDamage = resultLog.GetInt32(6);
                 log.LosingDamage = resultLog.GetInt32(7);
-                log.SpecialWinCondition = resultLog.GetString(8);
+                log.SpecialWinCondition = createLogList(resultLog.GetString(8));
+                log.Draw = (resultLog.GetInt32(9) == 1);
                 battle.Rounds.Add(log);
             }
             resultLog.Close();
@@ -982,97 +991,234 @@ namespace MonsterCardTrading.DAL
 
         }
 
-        /*public void UpdateDeck(User user, Card card, int in_deck)
+        public void CloseBattle (Battle battle)
         {
 
+            //start transaction
+            Tuple<int, IDbConnection> pr = PostgresRepository.getConnection();
 
-            string command = @"UPDATE stacks 
-                        SET user_id = @userid1
-                        SET in_deck = 0
-                        WHERE user_id = @userid2 and card_id = @cardid2";
+            int conID = pr.Item1;
+            IDbConnection con = pr.Item2;
+            IDbTransaction trans = con.BeginTransaction();
+
+
+            //delete lobby entry
+            IDbCommand lobbyCommand = con.CreateCommand();
+            lobbyCommand.CommandText = @"DELETE FROM battlelobby WHERE id = @lobbyid";
+
+            NpgsqlCommand lobby = lobbyCommand as NpgsqlCommand;
+            lobby.Parameters.Add("lobbyid", NpgsqlDbType.Varchar, 255);
+            lobby.Parameters["lobbyid"].Value = battle.Lobby;
+
+            int result = lobbyCommand.ExecuteNonQuery();
+
+            if(result != 1)
+            {
+                trans.Rollback();
+                PostgresRepository.releaseConnections(conID);
+                throw new ResponseException("Could not complete battle", 501);
+            }
+
+            Console.WriteLine("Lobby deleted");
+
+
+            //enter battle
+            IDbCommand battleCommand = con.CreateCommand();
+            battleCommand.CommandText = @"INSERT INTO battles (id, winner, loser, lobby_id, draw) VALUES (@id, @winner, @loser, @lobby_id, @draw)";
+
+            NpgsqlCommand b = battleCommand as NpgsqlCommand;
+
+            b.Parameters.Add("id", NpgsqlDbType.Varchar, 255);
+            b.Parameters.Add("winner", NpgsqlDbType.Varchar, 255);
+            b.Parameters.Add("loser", NpgsqlDbType.Varchar, 255);
+            b.Parameters.Add("lobby_id", NpgsqlDbType.Varchar, 255);
+            b.Parameters.Add("draw", NpgsqlDbType.Integer);
+
+            b.Parameters["id"].Value = battle.Id;
+            b.Parameters["winner"].Value = battle.Winner.Id;
+            b.Parameters["loser"].Value = battle.Loser.Id;
+            b.Parameters["lobby_id"].Value = battle.Lobby;
+            b.Parameters["draw"].Value = battle.Draw ? 1 : 0;
+
+            result = battleCommand.ExecuteNonQuery();
+
+            if (result != 1)
+            {
+                trans.Rollback();
+                PostgresRepository.releaseConnections(conID);
+                throw new ResponseException("Could not complete battle", 502);
+            }
+
+            Console.WriteLine("battle inserted");
+
+            //enter battle logs
+            IDbCommand logCommand = con.CreateCommand();
+            logCommand.CommandText = @"INSERT INTO battlelogs (id, battle_id, winning_card_id, losing_card_id, winning_user_id, losing_user_id, winning_damage, losing_damage, win_condition, round, draw) VALUES (@id, @battle, @winCard, @loseCard, @winner, @loser, @winDmg, @loseDmg, @condition, @round, @draw)";
+
+            NpgsqlCommand l = logCommand as NpgsqlCommand;
+
+            l.Parameters.Add("id", NpgsqlDbType.Varchar, 255);
+            l.Parameters.Add("battle", NpgsqlDbType.Varchar, 255);
+            l.Parameters.Add("winCard", NpgsqlDbType.Varchar, 255);
+            l.Parameters.Add("loseCard", NpgsqlDbType.Varchar, 255);
+            l.Parameters.Add("winner", NpgsqlDbType.Varchar, 255);
+            l.Parameters.Add("loser", NpgsqlDbType.Varchar, 255);
+            l.Parameters.Add("winDmg", NpgsqlDbType.Integer);
+            l.Parameters.Add("loseDmg", NpgsqlDbType.Integer);
+            l.Parameters.Add("condition", NpgsqlDbType.Varchar, 255);
+            l.Parameters.Add("round", NpgsqlDbType.Integer);
+            l.Parameters.Add("draw", NpgsqlDbType.Integer);
+
+            foreach (BattleLog log in battle.Rounds)
+            {
+                l.Parameters["id"].Value = log.Id;
+                l.Parameters["battle"].Value = battle.Id;
+                l.Parameters["winCard"].Value = log.WinningCard.Id;
+                l.Parameters["loseCard"].Value = log.LosingCard.Id;
+                l.Parameters["winner"].Value = log.RoundWinner.Id;
+                l.Parameters["loser"].Value = log.RoundLoser.Id;
+                l.Parameters["winDmg"].Value = log.WinningDamage;
+                l.Parameters["loseDmg"].Value = log.LosingDamage;
+                l.Parameters["condition"].Value = createLogString(log.SpecialWinCondition);
+                l.Parameters["round"].Value = log.Round;
+                l.Parameters["draw"].Value = log.Draw ? 1 : 0;
+
+                result = logCommand.ExecuteNonQuery();
+                if(result != 1)
+                {
+                    trans.Rollback();
+                    PostgresRepository.releaseConnections(conID);
+                    throw new ResponseException("Could not complete battle", 503);
+                }
+
+            }
+
+            Console.WriteLine("battlelogs inserted");
+
+            if (!battle.Draw)
+            {
+                //change elo
+                IDbCommand eloCommand = con.CreateCommand();
+
+
+                eloCommand.CommandText = @"UPDATE users SET elo = elo + 3 WHERE id = @winner; UPDATE users SET elo = elo - 5 WHERE id =@loser";
+                NpgsqlCommand e = eloCommand as NpgsqlCommand;
+
+                e.Parameters.Add("winner", NpgsqlDbType.Varchar, 255);
+                e.Parameters.Add("loser", NpgsqlDbType.Varchar, 255);
+
+                e.Parameters["winner"].Value = battle.Winner.Id;
+                e.Parameters["loser"].Value = battle.Loser.Id;
+
+                result = eloCommand.ExecuteNonQuery();
+                if (result != 2)
+                {
+                    trans.Rollback();
+                    PostgresRepository.releaseConnections(conID);
+                    throw new ResponseException("Could not complete battle", 504);
+                }
+                Console.WriteLine("elo changed");
+            }
+
+
+            //das waren auch 30 Minuten meines Lebens :(
+            trans.Commit();
+
+
+
+            PostgresRepository.releaseConnections(conID);
         }
 
-        public void TransferCards(User user1, Card card1, User user2, Card card2)
+        private string createLogString(List<string> logs)
         {
-            //transfer first card
-            string command = @"UPDATE stacks 
-                        SET user_id = @userid1
-                        SET in_deck = 0
-                        WHERE user_id = @userid2 and card_id = @cardid2";
-
-            List<NpgsqlParameter> parameters = new List<NpgsqlParameter>();
-            parameters.Add(new NpgsqlParameter("@userid1", user1.Id));
-            parameters.Add(new NpgsqlParameter("@userid2", user2.Id));
-            parameters.Add(new NpgsqlParameter("@cardid2", card2.Id));
-
-            //pr.writeDB(command, parameters);
-
-            //transfer second card
-            command = @"UPDATE stacks 
-                        SET user_id = @userid2
-                        SET in_deck = 0
-                        WHERE user_id = @userid1 and card_id = @cardid1";
-
-            parameters.Clear();
-            parameters.Add(new NpgsqlParameter("@userid1", user1.Id));
-            parameters.Add(new NpgsqlParameter("@userid2", user2.Id));
-            parameters.Add(new NpgsqlParameter("@cardid1", card1.Id));
-
-            //pr.writeDB(command, parameters);
+            string result = "";
+            foreach(string log in logs)
+            {
+                result += log + ";";
+            }
+            return result;
         }
 
-
-        public void DeleteCard(Card card)
+        private List<string> createLogList(string logs)
         {
+            List<string> result = new List<string>();
+            string[] logList = logs.Split(";");
+            foreach(string log in logList)
+            {
+                if(log != "")
+                {
+                    result.Add(log);
+                }
+                
+            }
+            return result;
+        }
+
+        public string versionDatabase()
+        {
+            Tuple<int, IDbConnection> pr = PostgresRepository.getConnection();
+
+            int conID = pr.Item1;
+            IDbConnection con = pr.Item2;
+
+            IDbCommand command = con.CreateCommand();
+
+            command.CommandText = "SELECT version();";
+
+            IDataReader reader = command.ExecuteReader();
+
+            string result = "";
+            if(reader.Read())
+            {
+                result = reader.GetString(0);
+            }
+            else
+            {
+                result = null;
+            }
+            reader.Close();
+            PostgresRepository.releaseConnections(conID);
+
+            return result;
 
         }
-        public Card GetCard(string cardid)
-        {
-            string command = @"SELECT id, name, damage, type, element FROM cards WHERE id = @id;";
-            List<NpgsqlParameter> parameters = new List<NpgsqlParameter>();
 
-            parameters.Add(new NpgsqlParameter("@id", cardid));
+        public bool checkTable(string table)
+        {
+            Tuple<int, IDbConnection> pr = PostgresRepository.getConnection();
+
+            int conID = pr.Item1;
+            IDbConnection con = pr.Item2;
+
+            IDbCommand command = con.CreateCommand();
+
+            command.CommandText = "SELECT EXISTS (SELECT FROM  pg_tables  WHERE schemaname = 'public' AND tablename = @table);";
+
+            NpgsqlCommand c = command as NpgsqlCommand;
+
+            c.Parameters.Add("table", NpgsqlDbType.Varchar, 255);
+
+            c.Parameters["table"].Value = table;
 
             
 
-            Card card = new Card();
-            card.Id = result.GetString(0);
-            card.Name = result.GetString(1);
-            card.Damage = result.GetInt32(2);
-            card.Element = (MonsterCardTrading.Model.Element)result.GetInt32(3);
-            card.Type = (MonsterCardTrading.Model.Type)result.GetInt32(4);
-            return card;
-        }
+            IDataReader reader = command.ExecuteReader();
 
-        public void GetDeck(string userid)
-        {
-            string command = @"Select card_id From stacks Where user_id = @userid and in_deck = 1;";
-            List<NpgsqlParameter> parameters = new List<NpgsqlParameter>();
+            bool result = false;
+            if (reader.Read())
+            {
+                result = reader.GetBoolean(0);
+            }
+           
+            reader.Close();
+            PostgresRepository.releaseConnections(conID);
 
-            parameters.Add(new NpgsqlParameter(@userid, userid));
-
-            NpgsqlDataReader result = //pr.readDB(command, parameters);
-
+            return result;
 
         }
 
+            
         
-
-            
-        }
-
-        private void checkDatabaseTables()
-        {
-            string command = "SELECT * FROM information_schema.tables;";
-
-            
-            Console.WriteLine("Tables:");
-
-            NpgsqlDataReader result = //pr.readDB(command, null);
-
-
-        }*/
-
 
         private void setupDatabase()
         {
@@ -1119,5 +1265,215 @@ namespace MonsterCardTrading.DAL
             PostgresRepository.releaseConnections(conID);
 
         }
+
+
+        public Stats GetStats(User user)
+        {
+
+            Stats stats = new Stats();
+            List<string> intCommands = new List<string>();
+            List<int> intValues = new List<int>();
+
+            intCommands.Add(@"Select Count(*) FROM battles Where winner = @userid and draw = 0;");
+            intCommands.Add(@"Select Count(*) From battles Where loser = @userid and draw = 0;");
+            intCommands.Add(@"Select Count(*) From battles Where (winner = @userid or loser = @userid) and draw = 1;");
+
+            intCommands.Add(@"Select Count(*) FROM battlelogs Where winning_user_id = @userid and draw = 0;");
+            intCommands.Add(@"Select Count(*) FROM battlelogs Where losing_user_id = @userid and draw = 0;");
+            intCommands.Add(@"Select Count(*) FROM battlelogs Where (winning_user_id = @userid or losing_user_id = @userid) and draw = 1;");
+
+            string strongestCard = @"SELECT cards.name, COUNT(*) AS Expr1 FROM     battlelogs INNER JOIN     cards ON cards.id = battlelogs.winning_card_id WHERE (battlelogs.winning_user_id = @userid) AND (battlelogs.draw = 0) GROUP BY battlelogs.winning_card_id, cards.name ORDER BY Expr1 DESC;";
+            string weakestCard = @"SELECT cards.name, COUNT(*) AS Expr1 FROM     battlelogs INNER JOIN     cards ON cards.id = battlelogs.losing_card_id WHERE (battlelogs.losing_user_id = @userid) AND (battlelogs.draw = 0) GROUP BY battlelogs.losing_card_id, cards.name ORDER BY Expr1 DESC;";
+            string cardSpecies = @"SELECT cards.type, COUNT(*) AS amount FROM  cards INNER JOIN stacks ON cards.id = stacks.card_id WHERE (stacks.user_id = @userid) GROUP BY cards.type ORDER BY amount DESC;";
+            string cardElements = @"SELECT cards.element, COUNT(*) AS amount FROM cards INNER JOIN stacks ON cards.id = stacks.card_id WHERE (stacks.user_id = @userid) GROUP BY cards.element ORDER BY amount DESC;";
+
+
+
+
+            Tuple<int, IDbConnection> pr = PostgresRepository.getConnection();
+
+            int conID = pr.Item1;
+            IDbConnection con = pr.Item2;
+            IDataReader result;
+            IDbCommand command = con.CreateCommand();
+
+            NpgsqlCommand c = command as NpgsqlCommand;
+
+            c.Parameters.Add("userid", NpgsqlDbType.Varchar, 255);
+            c.Parameters["userid"].Value = user.Id;
+
+            foreach(string com in intCommands)
+            {
+                command.CommandText = com;
+                result = command.ExecuteReader();
+
+                if(result.Read())
+                {
+                    intValues.Add(result.GetInt32(0));
+                }
+                else
+                {
+                    result.Close();
+                    PostgresRepository.releaseConnections(conID);
+                    throw new ResponseException("Could not retrieve stats", 500);
+                }
+                result.Close();
+            }
+
+
+
+            //strong
+            command.CommandText = strongestCard;
+            result = command.ExecuteReader();
+
+            if (result.Read())
+            {
+                stats.strongestCard = Tuple.Create(result.GetString(0),result.GetInt32(1));
+                
+            }
+            else
+            {
+                stats.strongestCard = null;
+            }
+            result.Close();
+
+
+
+            //weak
+            command.CommandText = weakestCard;
+            result = command.ExecuteReader();
+
+            if (result.Read())
+            {
+                stats.weakestCard = Tuple.Create(result.GetString(0), result.GetInt32(1));
+
+            }
+            else
+            {
+                stats.weakestCard = null;
+            }
+            result.Close();
+
+
+
+
+
+
+
+            command.CommandText = cardElements;
+
+            result = command.ExecuteReader();
+            if (result.Read())
+            {
+                var elem = (MonsterCardTrading.Model.Element)result.GetInt32(0);
+                stats.cardElements.Add(elem.ToString(), result.GetInt32(1));
+                while(result.Read())
+                {
+                    elem = (MonsterCardTrading.Model.Element)result.GetInt32(0);
+                    stats.cardElements.Add(elem.ToString(), result.GetInt32(1));
+                }
+            }
+            else
+            {
+                stats.cardElements = null;
+            }
+
+            result.Close();
+
+
+
+
+
+            command.CommandText = cardSpecies;
+
+            result = command.ExecuteReader();
+            if (result.Read())
+            {
+                var spec = (MonsterCardTrading.Model.Species)result.GetInt32(0);
+                stats.cardSpecies.Add(spec.ToString(), result.GetInt32(1));
+                while (result.Read())
+                {
+                    spec = (MonsterCardTrading.Model.Species)result.GetInt32(0);
+                    stats.cardSpecies.Add(spec.ToString(), result.GetInt32(1));
+                }
+            }
+            else
+            {
+                stats.cardSpecies = null;
+            }
+
+            result.Close();
+
+
+            
+            
+
+
+            stats.totalBattles = intValues[0] + intValues[1] + intValues[2];
+            stats.wonBattles = intValues[0];
+            stats.lostBattles = intValues[1];
+            stats.drawBattles = intValues[2];
+
+            stats.eloLost = intValues[1] * 5;
+            stats.eloWon = intValues[0] * 3;
+
+            stats.roundsWon = intValues[3];
+            stats.roundsLost = intValues[4];
+            stats.roundsDraw = intValues[5];
+
+
+
+
+           
+
+            return stats;
+        }
+
+        public string GetUserIdWithCards()
+        {
+            Tuple<int, IDbConnection> pr = PostgresRepository.getConnection();
+
+            int conID = pr.Item1;
+            IDbConnection con = pr.Item2;
+            IDataReader result;
+            IDbCommand command = con.CreateCommand();
+            command.CommandText = "SELECT winner FROM battles Limit 1";
+
+            result = command.ExecuteReader();
+
+            if(result.Read())
+            {
+                return result.GetString(0);
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        public string GetLobbyIdFromBattle()
+        {
+            Tuple<int, IDbConnection> pr = PostgresRepository.getConnection();
+
+            int conID = pr.Item1;
+            IDbConnection con = pr.Item2;
+            IDataReader result;
+            IDbCommand command = con.CreateCommand();
+            command.CommandText = "SELECT lobby_id FROM battles Limit 1";
+
+            result = command.ExecuteReader();
+
+            if (result.Read())
+            {
+                return result.GetString(0);
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+
+
     }
 }

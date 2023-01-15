@@ -27,6 +27,9 @@ namespace MonsterCardTrading.APIHandler
                 case "PUT":
                     ChangeUser(request, response);
                     break;
+                default:
+                    response.setResponse(404, "FAILED", "{\"message\":\"No " + request.Method + " for " + request.Path + "\"}");
+                    break;
             }
         }
 
@@ -37,9 +40,7 @@ namespace MonsterCardTrading.APIHandler
             {
                 var user = JsonSerializer.Deserialize<User>(request.Content);
 
-
-                Console.WriteLine(user.Username);
-
+                
                 if (user != null)
                 {
                     UserHandler userHandler = new UserHandler();
@@ -110,7 +111,7 @@ namespace MonsterCardTrading.APIHandler
                     throw new ResponseException("Could not deserialize request", 400);
                 }
                 UserHandler userHandler = new UserHandler();
-                if (request.Headers.TryGetValue("Authorization", out string token) && request.Headers.TryGetValue("User", out string username))
+                if (request.Headers.TryGetValue("Authorization", out string token) && request.Headers.TryGetValue("PathParam", out string username))
                 {
                     User currentUser = userHandler.userFromToken(token);
 
